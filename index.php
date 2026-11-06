@@ -6,11 +6,6 @@ $nW = (int) $c("SELECT COUNT(*) FROM users WHERE role='worker'");
 $nD = (int) $c("SELECT COUNT(*) FROM jobs WHERE status='completed'");
 $nV = (int) $c("SELECT COUNT(*) FROM users WHERE role='worker' AND verified=1");
 $avg = round($c("SELECT AVG(stars) FROM reviews"), 1);
-$w = $pdo
-    ->query(
-        "SELECT u.name,u.skill,(SELECT ROUND(AVG(stars),1) FROM reviews WHERE worker_id=u.id) r,(SELECT COUNT(*) FROM reviews WHERE worker_id=u.id) rc FROM users u WHERE role='worker' AND verified=1 ORDER BY r DESC LIMIT 6",
-    )
-    ->fetchAll();
 $q = $pdo
     ->query(
         "SELECT r.stars,r.comment,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.stars>=4 AND r.comment<>'' ORDER BY r.id DESC LIMIT 3",
@@ -400,9 +395,13 @@ $ico = [
   padding: 24px 14px;
 }
 .lp .svc i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 62px;
   width: 62px;
   height: 62px;
-  line-height: 62px;
+  padding: 0;
+  line-height: 1;
   margin: 0 auto 12px;
   border-radius: 20px;
   background: linear-gradient(135deg, #e6f3f5, #fff1dc);
@@ -410,6 +409,15 @@ $ico = [
   transition:
     transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1),
     background 0.3s;
+}
+.lp .svc i .material-icons {
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
+  vertical-align: middle;
 }
 .lp .svc:hover i {
   transform: scale(1.15) rotate(-8deg);
@@ -428,15 +436,27 @@ $ico = [
   background: linear-gradient(90deg, var(--t), var(--t2), var(--o));
 }
 .lp .feat i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 54px;
   width: 54px;
   height: 54px;
-  line-height: 54px;
-  text-align: center;
+  padding: 0;
+  line-height: 1;
   border-radius: 16px;
   background: #e6f3f5;
   font-size: 26px;
   margin-bottom: 12px;
   transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.lp .feat i .material-icons {
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+  vertical-align: middle;
 }
 .lp .feat:hover i {
   transform: scale(1.12) rotate(6deg);
@@ -742,7 +762,6 @@ $ico = [
             <span><span class="material-icons mi-xs" aria-hidden="true">verified</span>ID-verified workers</span>
             <span><span class="material-icons mi-xs" aria-hidden="true">emergency</span>Emergency booking</span>
             <span><span class="material-icons mi-xs" aria-hidden="true">chat</span>Live chat</span>
-            <span><span class="material-icons mi-xs" aria-hidden="true">translate</span>ಕನ್ನಡ + English</span>
         </div>
     </section>
 
@@ -780,83 +799,34 @@ $ico = [
         </div>
     </section>
 
-    <section aria-labelledby="how-title">
-        <h2 id="how-title" class="rv"><?= t("How it works") ?></h2>
-        <div class="grid how rv">
-            <div class="card step"><span class="material-icons mi" aria-hidden="true">post_add</span><?= t(
-                "1. Customer posts a job",
-            ) ?></div>
-            <div class="card step"><span class="material-icons mi" aria-hidden="true">local_offer</span><?= t(
-                "2. Workers send offers",
-            ) ?></div>
-            <div class="card step"><span class="material-icons mi" aria-hidden="true">task_alt</span><?= t(
-                "3. Accept the best offer",
-            ) ?></div>
-            <div class="card step"><span class="material-icons mi" aria-hidden="true">track_changes</span><?= t(
-                "4. Track job progress",
-            ) ?></div>
-        </div>
-    </section>
-
-    <section aria-labelledby="features-title">
-        <h2 id="features-title" class="rv">Why Workonnect?</h2>
+    <section aria-labelledby="explore-title">
+        <h2 id="explore-title" class="rv">Explore Workonnect</h2>
+        <p>Learn how the marketplace works, what to expect, and how to get started.</p>
         <div class="grid rv">
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">security</span></i>
-                <b>Verified &amp; trusted</b>
-                <p>Workers upload ID proof; Top Rated, Gold, Silver and Bronze levels show real performance.</p>
-            </div>
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">emergency</span></i>
-                <b>Emergency jobs</b>
-                <p>Mark a job urgent and it appears first for workers.</p>
-            </div>
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">place</span></i>
-                <b>Nearby workers</b>
-                <p>Use "Near me" to find the closest available worker.</p>
-            </div>
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">payments</span></i>
-                <b>Fair prices</b>
-                <p>Compare offers, apply coupons, pay from wallet. Only a 10% platform fee.</p>
-            </div>
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">chat</span></i>
-                <b>Chat &amp; tracking</b>
-                <p>Talk to your worker and follow every step of the job.</p>
-            </div>
-            <div class="card feat">
-                <i><span class="material-icons" aria-hidden="true">notifications</span></i>
-                <b>Instant alerts</b>
-                <p>Live notification bell for offers, payments and updates.</p>
-            </div>
-        </div>
-    </section>
-
-    <section aria-labelledby="workers-title">
-        <h2 id="workers-title" class="rv"><?= t("Verified Workers") ?></h2>
-        <div class="grid rv">
-            <?php foreach ($w as $x) { ?>
-                <div class="card vw">
-                    <div class="av"><?= e(
-                        mb_strtoupper(mb_substr(trim($x["name"]), 0, 1)),
-                    ) ?></div>
-                    <b><?= e($x["name"]) ?></b><br>
-                    <?= e($x["skill"]) ?><br>
-                    <?php if ($x["r"]) { ?>
-                        <?= $x[
-                            "r"
-                        ] ?> <span class="material-icons mi-xs" aria-label="stars">star</span> (<?= $x[
-     "rc"
- ] ?>)<br>
-                    <?php } ?>
-                    <?= badge(1) ?>
-                </div>
-            <?php } ?>
-            <?php if (!$w) { ?>
-                <p>No verified workers yet.</p>
-            <?php } ?>
+            <a class="card feat" href="how-it-works.php">
+                <i><span class="material-icons" aria-hidden="true">route</span></i>
+                <b>How it works</b>
+                <p>Follow the steps from posting a job to completing and paying for it.</p>
+                <span>See how it works</span>
+            </a>
+            <a class="card feat" href="why-workonnect.php">
+                <i><span class="material-icons" aria-hidden="true">handshake</span></i>
+                <b>Why Workonnect?</b>
+                <p>See the tools that help customers and local professionals work together.</p>
+                <span>Why choose us</span>
+            </a>
+            <a class="card feat" href="verified-workers.php">
+                <i><span class="material-icons" aria-hidden="true">verified_user</span></i>
+                <b>Verified workers</b>
+                <p>Browse profiles, skills, customer ratings, and verification details.</p>
+                <span>Meet the workers</span>
+            </a>
+            <a class="card feat" href="quick-answers.php">
+                <i><span class="material-icons" aria-hidden="true">quiz</span></i>
+                <b>Quick answers</b>
+                <p>Get clear answers about accounts, bookings, payments, and support.</p>
+                <span>Read the FAQs</span>
+            </a>
         </div>
     </section>
 
@@ -876,22 +846,6 @@ $ico = [
             </div>
         </section>
     <?php } ?>
-
-    <section aria-labelledby="faq-title">
-        <h2 id="faq-title" class="rv">Quick answers</h2>
-        <details class="card rv">
-            <summary>Is payment safe?</summary>
-            <p>Pay by UPI, card, net banking, cash or wallet. We never store your card or UPI details.</p>
-        </details>
-        <details class="card rv">
-            <summary>How do I become a verified worker?</summary>
-            <p>Register as a worker, open "Get Verified" and upload your ID. Admin approves it and your badge appears.</p>
-        </details>
-        <details class="card rv">
-            <summary>What if the job goes wrong?</summary>
-            <p>You can cancel, request a refund, or file a complaint from the job page.</p>
-        </details>
-    </section>
 
     <section class="lpcta rv" aria-labelledby="cta-title">
         <h2 id="cta-title"><?= t("Find Skilled Workers Near You") ?></h2>

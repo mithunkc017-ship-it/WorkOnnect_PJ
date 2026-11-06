@@ -692,6 +692,7 @@ function auth_close($alt = "")
 function head($t)
 {
     $u = me();
+    $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
     $q = function ($l) {
         return "?" . http_build_query(array_merge($_GET, ["lang" => $l]));
     };
@@ -737,20 +738,34 @@ function head($t)
     }
     echo '<a href="workers.php"><span class="material-icons mi">search</span>' .
         t("Find Workers") .
-        '</a><a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span></a><a href="' .
-        $q("kn") .
-        '"><span class="material-icons mi">translate</span>ಕನ್ನಡ</a><a href="' .
-        $q("en") .
-        '">EN</a></div></nav>' .
+        '</a>' .
+        ($isHome
+            ? ""
+            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span></a><a href="' .
+                $q("kn") .
+                '"><span class="material-icons mi">translate</span>ಕನ್ನಡ</a><a href="' .
+                $q("en") .
+                '">EN</a>') .
+        "</div></nav>" .
         announceBar() .
         "<main>";
 }
 function foot()
 {
-    echo '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>
-<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
-<div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>
-<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}if(localStorage.d)document.body.classList.add("dark");
+    $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
+    echo '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
+    if (!$isHome) {
+        echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
+<div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
+    }
+    echo '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});';
+    if (!$isHome) {
+        echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
+    }
+    if (!$isHome) {
+        echo "if(localStorage.d)document.body.classList.add('dark');";
+    }
+    echo '
 function tb(){if(window.Notification&&Notification.permission=="default")Notification.requestPermission();var p=document.getElementById("np");p.hidden=!p.hidden;if(!p.hidden&&window.loadN)window.loadN();return false}
 if(document.getElementById("bell")){const CS="' .
         $_SESSION["csrf"] .
