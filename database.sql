@@ -1,0 +1,38 @@
+CREATE DATABASE IF NOT EXISTS workerconnect;
+USE workerconnect;
+CREATE TABLE users(id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(80),email VARCHAR(100) UNIQUE,phone VARCHAR(15),password VARCHAR(255),role ENUM('customer','worker','admin') DEFAULT 'customer',skill VARCHAR(40),verified TINYINT DEFAULT 0,experience VARCHAR(60),bio VARCHAR(255),photo VARCHAR(200),available TINYINT DEFAULT 1,lat DOUBLE,lng DOUBLE,banned TINYINT DEFAULT 0,ban_reason VARCHAR(200),wallet INT DEFAULT 0,ref_code VARCHAR(12),referred_by INT,ref_rewarded TINYINT DEFAULT 0,work_days VARCHAR(30),work_from TIME,work_to TIME,area VARCHAR(150),email_verified TINYINT DEFAULT 0,otp VARCHAR(64),otp_expires DATETIME,otp_tries TINYINT DEFAULT 0,job_alerts TINYINT DEFAULT 1,upi_id VARCHAR(60));
+CREATE TABLE jobs(id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT,title VARCHAR(120),category VARCHAR(40),details TEXT,amount VARCHAR(60),location VARCHAR(100),phone VARCHAR(15),photo VARCHAR(200),price INT DEFAULT 0,paid TINYINT DEFAULT 0,pay_method VARCHAR(20),urgent TINYINT DEFAULT 0,commission INT DEFAULT 0,slot DATETIME,confirmed TINYINT DEFAULT 0,discount INT DEFAULT 0,tip INT DEFAULT 0,refunded TINYINT DEFAULT 0,reschedule_slot DATETIME,reschedule_by INT,status ENUM('open','requested','assigned','in_progress','completed','cancelled') DEFAULT 'open',worker_id INT NULL,pay_ref VARCHAR(40),quote_labour INT DEFAULT 0,quote_mat INT DEFAULT 0,quote_status ENUM('none','proposed','approved') DEFAULT 'none',onway TINYINT DEFAULT 0,done_at DATETIME,revisit TINYINT DEFAULT 0,revisit_note VARCHAR(200),share_token VARCHAR(32),escrow TINYINT DEFAULT 0,disputed TINYINT DEFAULT 0,wlat DOUBLE,wlng DOUBLE,wtime DATETIME,rem24 TINYINT DEFAULT 0,rem1 TINYINT DEFAULT 0,cancel_fee INT DEFAULT 0,paid_at DATETIME,settled TINYINT DEFAULT 0,settled_at DATETIME,settle_ref VARCHAR(40),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE offers(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,worker_id INT,price INT,message VARCHAR(255),status ENUM('pending','rejected') DEFAULT 'pending',created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE(job_id,worker_id));
+CREATE TABLE notifications(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,msg VARCHAR(200),link VARCHAR(100),seen TINYINT DEFAULT 0,created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS reviews(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT UNIQUE,worker_id INT,customer_id INT,stars TINYINT,comment VARCHAR(255),reply VARCHAR(300),reply_at DATETIME,created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS messages(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,sender_id INT,msg VARCHAR(300),photo VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS categories(id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(40) UNIQUE);
+INSERT IGNORE INTO categories(name)VALUES('Electrician'),('Plumber'),('Carpenter'),('Painter'),('Cleaner'),('Driver'),('Mechanic'),('AC Technician');
+CREATE TABLE IF NOT EXISTS complaints(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,user_id INT,msg VARCHAR(300),status ENUM('open','resolved') DEFAULT 'open',created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS password_resets(id INT AUTO_INCREMENT PRIMARY KEY,email VARCHAR(100),token VARCHAR(40),expires DATETIME);
+CREATE TABLE IF NOT EXISTS verifications(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,doc VARCHAR(200),status ENUM('pending','approved','rejected') DEFAULT 'pending',note VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS favorites(customer_id INT,worker_id INT,UNIQUE(customer_id,worker_id));
+CREATE TABLE IF NOT EXISTS login_attempts(id INT AUTO_INCREMENT PRIMARY KEY,ip VARCHAR(45),ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS portfolio(id INT AUTO_INCREMENT PRIMARY KEY,worker_id INT,photo VARCHAR(200),caption VARCHAR(100));
+CREATE TABLE IF NOT EXISTS service_prices(id INT AUTO_INCREMENT PRIMARY KEY,worker_id INT,service VARCHAR(60),price INT);
+CREATE TABLE IF NOT EXISTS coupons(code VARCHAR(20) PRIMARY KEY,percent TINYINT,active TINYINT DEFAULT 1,used INT DEFAULT 0);
+CREATE TABLE IF NOT EXISTS contacts(id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(80),email VARCHAR(100),msg VARCHAR(500),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS activity_log(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,action VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS wallet_tx(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,amount INT,note VARCHAR(100),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+-- After registering your first account, make it admin:
+-- UPDATE users SET role='admin' WHERE email='your@email.com';
+
+
+CREATE TABLE IF NOT EXISTS job_extras(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,descr VARCHAR(100),amount INT,status ENUM('proposed','approved','declined') DEFAULT 'proposed');
+CREATE TABLE IF NOT EXISTS addresses(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,label VARCHAR(30),address VARCHAR(150));
+
+CREATE TABLE IF NOT EXISTS disputes(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,opened_by INT,reason VARCHAR(300),status ENUM('open','resolved') DEFAULT 'open',decision VARCHAR(20),admin_note VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS dispute_evidence(id INT AUTO_INCREMENT PRIMARY KEY,dispute_id INT,user_id INT,note VARCHAR(300),photo VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS certificates(id INT AUTO_INCREMENT PRIMARY KEY,worker_id INT,title VARCHAR(100),photo VARCHAR(200),status ENUM('pending','approved','rejected') DEFAULT 'pending',created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS announcements(id INT AUTO_INCREMENT PRIMARY KEY,msg VARCHAR(200),link VARCHAR(100),active TINYINT DEFAULT 1,created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS qr_payments(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,user_id INT,amount INT,discount INT DEFAULT 0,coupon VARCHAR(20),utr VARCHAR(20),mode ENUM('platform','split') DEFAULT 'platform',worker_utr VARCHAR(20),fee_utr VARCHAR(20),worker_ok TINYINT DEFAULT 0,fee_ok TINYINT DEFAULT 0,status ENUM('waiting','submitted','approved','rejected') DEFAULT 'waiting',created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS job_photos(id INT AUTO_INCREMENT PRIMARY KEY,job_id INT,user_id INT,kind ENUM('before','after'),photo VARCHAR(200),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS login_history(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT,email VARCHAR(100),ip VARCHAR(45),ua VARCHAR(120),ok TINYINT,note VARCHAR(40),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);

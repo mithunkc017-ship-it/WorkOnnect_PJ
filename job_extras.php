@@ -1,0 +1,36 @@
+<?php // Extra blocks on job.php: clash warning, on the way, itemized quote, extra work, safety (SOS + share link)
+$cu=$j['customer_id']==$u['id'];$wk=$j['worker_id']==$u['id'];
+if(!empty($_SESSION['flash'])){echo '<p class="err">'.e($_SESSION['flash']).'</p>';unset($_SESSION['flash']);}
+if($cu&&cancelFee($j))echo '<p><small>ℹ Cancelling now costs ₹'.cancelFee($j).' (cancellation policy). It is free until a worker accepts.</small></p>';
+function f2($a,$btn,$in='',$st=''){return '<form method="post" style="'.$st.'"><input type="hidden" name="a" value="'.$a.'">'.$in.'<button>'.$btn.'</button></form>';}
+if($j['slot']&&$j['worker_id']&&in_array($j['status'],['requested','assigned'])&&($cl=clash($pdo,$j['worker_id'],$j['slot'],$j['id'])))echo '<p class="err">⚠ The worker already has job #'.$cl.' around this time.</p>';
+if($j['status']=='assigned'&&$j['onway'])echo '<p>🚗 <b>The worker is on the way!</b></p>';
+if($wk&&$j['status']=='assigned'&&!$j['onway'])echo f2('onway','🚗 I am on the way');
+if($j['quote_status']=='proposed'){echo '<div class="card"><b>📝 Quote:</b> Labour ₹'.$j['quote_labour'].' + Materials ₹'.$j['quote_mat'].' = <b>₹'.($j['quote_labour']+$j['quote_mat']).'</b>';
+ if($cu)echo '<form method="post"><input type="hidden" name="a" value="qa"><button name="r" value="accept">Approve quote</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';echo '</div>';}
+elseif($j['quote_status']=='approved')echo '<p>📝 Approved quote: labour ₹'.$j['quote_labour'].' + materials ₹'.$j['quote_mat'].'</p>';
+if($wk&&$j['status']=='assigned'&&!$j['paid']&&$j['quote_status']!='approved')echo f2('quote','📝 Send quote','<input type="number" name="lab" min="0" placeholder="Labour ₹" required><input type="number" name="mat" min="0" placeholder="Materials ₹" required>','display:flex;gap:8px');
+$ex=$pdo->prepare("SELECT * FROM job_extras WHERE job_id=?");$ex->execute([$j['id']]);
+foreach($ex as $x){echo '<p>➕ Extra work: '.e($x['descr']).' – ₹'.$x['amount'].' ('.$x['status'].')';
+ if($cu&&$x['status']=='proposed'&&!$j['paid'])echo '<form method="post" style="display:inline"><input type="hidden" name="a" value="ex"><input type="hidden" name="id" value="'.$x['id'].'"><button name="r" value="accept">Approve</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';echo '</p>';}
+if($wk&&in_array($j['status'],['assigned','in_progress'])&&!$j['paid'])echo f2('extra','➕ Propose extra work','<input name="descr" placeholder="Extra work" required><input type="number" name="amt" min="1" placeholder="₹" required>','display:flex;gap:8px');
+if(($cu||$wk)&&in_array($j['status'],['assigned','in_progress'])){echo '<details class="card"><summary>🛡 Safety</summary><form method="post" onsubmit="return confirm(\'Send an SOS alert to the admin?\')"><input type="hidden" name="a" value="sos"><button style="background:#c00">🆘 SOS – alert admin</button></form>';
+ echo $j['share_token']?'<p>Share this link with a trusted person: <a href="share.php?t='.$j['share_token'].'" target="_blank">share.php?t='.$j['share_token'].'</a></p>':f2('share','🔗 Create share link');echo '</details>';}
+// ---- v17: escrow, dispute link, live tracking
+if($j['disputed'])echo '<p class="err">⚖ A dispute is open – the payment is on hold until the admin decides.</p>';
+if($j['escrow']&&!$j['confirmed']&&$j['paid']&&!$j['refunded'])echo '<p class="ok">🔒 ₹'.$j['price'].' is held safely in escrow until the customer confirms the work.</p>';
+if($j['escrow']&&$j['confirmed']&&$j['paid']&&!$j['refunded'])echo '<p class="ok">✅ Escrow released to the worker.</p>';
+if($cu&&!$j['paid']&&!$j['refunded']&&$j['price']>0&&in_array($j['status'],['assigned','in_progress']))echo '<p><a class="btn" href="pay.php?id='.$j['id'].'">🔒 Pay securely now (escrow)</a> <small>Held until you confirm the work.</small></p>';
+if(($cu||$wk)&&$j['worker_id']&&in_array($j['status'],['assigned','in_progress','completed']))echo '<a class="btn" href="dispute.php?job='.$j['id'].'">⚖ '.($j['disputed']?'View dispute':'Open dispute').'</a>';
+if($wk&&in_array($j['status'],['assigned','in_progress'])){echo '<div class="card"><b>📍 Live location</b><br><button type="button" id="sh">Share my live location</button> <small id="shs"></small></div><script>let wid=null,last=0;sh.onclick=function(){if(!navigator.geolocation){shs.textContent="Not supported";return}if(wid!==null){navigator.geolocation.clearWatch(wid);wid=null;sh.textContent="Share my live location";shs.textContent="Stopped";return}sh.textContent="Stop sharing";wid=navigator.geolocation.watchPosition(function(p){if(Date.now()-last<10000)return;last=Date.now();fetch("track.php",{method:"POST",body:new URLSearchParams({csrf:"'.$_SESSION['csrf'].'",job:"'.$j['id'].'",lat:p.coords.latitude,lng:p.coords.longitude})});shs.textContent="Sharing… "+new Date().toLocaleTimeString()},function(){shs.textContent="Location permission denied"},{enableHighAccuracy:true})}</script>';}
+if($cu&&in_array($j['status'],['assigned','in_progress'])){echo '<div class="card"><b>📍 Worker location</b> <small id="tls">waiting for the worker to share…</small><iframe id="tlm" title="live" width="100%" height="220" style="border:0;border-radius:8px;display:none"></iframe></div><script>function tl(){fetch("track.php?id='.$j['id'].'").then(r=>r.json()).then(d=>{if(d.lat){let q=d.lat+","+d.lng;tlm.style.display="block";if(q!==window.lq){window.lq=q;tlm.src="https://www.google.com/maps?q="+q+"&output=embed"}tls.textContent="updated "+d.age+"s ago"}})}tl();setInterval(tl,10000)</script>';}
+// ---- v22: before / after work photos (proof of work)
+$ph=$pdo->prepare("SELECT * FROM job_photos WHERE job_id=? ORDER BY id");$ph->execute([$j['id']]);$ph=$ph->fetchAll();$canph=$wk&&in_array($j['status'],['assigned','in_progress','completed']);
+if($ph||$canph){echo '<div class="card"><b>📸 Work photos</b><div class="grid">';
+ foreach(['before'=>'Before','after'=>'After'] as $k=>$lab){echo '<div><b>'.$lab.'</b><br>';$has=false;
+  foreach($ph as $x)if($x['kind']==$k){$has=true;echo '<img class="p" style="max-height:160px;margin:4px 0" src="'.e($x['photo']).'">';
+   if($wk&&$j['status']!='completed')echo '<form method="post" style="display:inline"><input type="hidden" name="a" value="wphotodel"><input type="hidden" name="pid" value="'.$x['id'].'"><button style="background:#c00;padding:2px 8px">✕</button></form>';echo '<br>';}
+  if(!$has)echo '<small>No '.strtolower($lab).' photo yet</small>';echo '</div>';}
+ echo '</div>';
+ if($canph)echo '<form method="post" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" name="a" value="wphoto"><select name="kind"><option value="before">Before photo</option><option value="after">After photo</option></select><input type="file" name="photo" accept="image/*" required style="width:auto"><button>Upload</button></form><small>Photos are proof of work and help avoid disputes.</small>';
+ echo '</div>';}

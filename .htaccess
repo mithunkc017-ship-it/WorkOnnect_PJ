@@ -1,0 +1,4 @@
+# Keep the simulated email log private
+<Files "mail_log.txt">
+Require all denied
+</Files>

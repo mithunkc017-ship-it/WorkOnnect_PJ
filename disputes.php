@@ -1,0 +1,3 @@
+<?php // Admin: list of all disputes
+require 'config.php';need('admin');head('Disputes');?><h2>⚖ Disputes</h2><div style="overflow-x:auto"><table><tr><th>Job</th><th>Opened by</th><th>Reason</th><th>Status</th><th>Decision</th></tr>
+<?php foreach($pdo->query("SELECT d.*,u.name FROM disputes d JOIN users u ON u.id=d.opened_by ORDER BY d.status='open' DESC,d.id DESC LIMIT 100") as $x)echo '<tr><td><a href="dispute.php?job='.$x['job_id'].'">#'.$x['job_id'].'</a></td><td>'.e($x['name']).'</td><td>'.e($x['reason']).'</td><td>'.$x['status'].'</td><td>'.e($x['decision']).'</td></tr>';?></table></div><?php foot();

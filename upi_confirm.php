@@ -1,0 +1,14 @@
+<?php // Worker: confirm that a customer's direct UPI payment (your share) reached your UPI account
+require 'config.php';need('worker');$u=me();
+if($_SERVER['REQUEST_METHOD']=='POST'){
+ $s=$pdo->prepare("SELECT q.* FROM qr_payments q JOIN jobs j ON j.id=q.job_id WHERE q.id=? AND j.worker_id=? AND q.mode='split' AND q.status='submitted' AND q.worker_ok=0");$s->execute([(int)$_POST['id'],$u['id']]);$q=$s->fetch();
+ if($q){if(($_POST['r']??'')=='ok'){$pdo->prepare("UPDATE qr_payments SET worker_ok=1 WHERE id=?")->execute([$q['id']]);finishSplit($pdo,$q['id']);logit('Worker confirmed receiving UPI payment #'.$q['id']);}
+  else{$pdo->prepare("UPDATE qr_payments SET status='rejected' WHERE id=?")->execute([$q['id']]);notify($q['user_id'],'The worker did not receive your UPI payment for job #'.$q['job_id'].'. Please check the reference number and try again.','pay.php?id='.$q['job_id']);
+   foreach($pdo->query("SELECT id FROM users WHERE role='admin'") as $ad)notify($ad['id'],'⚠ Worker says a split UPI payment was NOT received (job #'.$q['job_id'].')','qr_payments.php');logit('Worker rejected UPI payment #'.$q['id']);}}
+ header('Location: upi_confirm.php');exit;}
+head('UPI confirmations');?><h2>📱 Confirm UPI Payments</h2><p><small>Customers who pay you directly by UPI enter their reference number here. Check your UPI app and confirm only if the money arrived.</small></p>
+<?php if(!validUpi($u['upi_id']??''))echo '<p class="err">You have no UPI ID yet. <a href="my_upi.php">Add your UPI ID</a> so customers can pay you directly.</p>';?>
+<div style="overflow-x:auto"><table><tr><th>Job</th><th>Your share</th><th>UPI reference</th><th>Status</th><th></th></tr>
+<?php $s=$pdo->prepare("SELECT q.*,j.title FROM qr_payments q JOIN jobs j ON j.id=q.job_id WHERE j.worker_id=? AND q.mode='split' AND q.status<>'waiting' ORDER BY q.status='submitted' DESC,q.id DESC LIMIT 50");$s->execute([$u['id']]);
+foreach($s as $x){echo '<tr><td><a href="job.php?id='.$x['job_id'].'">'.e($x['title']).'</a></td><td>₹'.($x['amount']-(int)round($x['amount']*0.10)).'</td><td>'.e($x['worker_utr']).'</td><td>'.($x['status']=='submitted'?($x['worker_ok']?'✅ you confirmed – waiting for the platform':'⏳ waiting for you'):e($x['status'])).'</td><td>';
+ if($x['status']=='submitted'&&!$x['worker_ok'])echo '<form method="post" style="display:flex;gap:6px"><input type="hidden" name="id" value="'.$x['id'].'"><button name="r" value="ok">✅ Money received</button><button name="r" value="no" style="background:#c00">Not received</button></form>';echo '</td></tr>';}?></table></div><?php foot();
