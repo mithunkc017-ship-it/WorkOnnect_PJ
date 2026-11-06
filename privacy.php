@@ -1,5 +1,7 @@
 <?php // Privacy policy (sample text for the project)
-require 'config.php';head('Privacy Policy');?>
+require "config.php";
+head("Privacy Policy");
+?>
 <div class="card legal"><h2>Privacy Policy</h2><p><small>Sample policy prepared for a student project. Get legal advice before using it for a real business.</small></p>
 <h3>What we collect</h3><p>Your name, email, phone number, job details, messages and reviews. Workers may also upload a profile photo, ID proof and work photos. With your permission we use your location to show nearby workers.</p>
 <h3>How we use it</h3><p>To run your account, match jobs, process payments, send alerts and verification codes, prevent fraud and handle complaints.</p>

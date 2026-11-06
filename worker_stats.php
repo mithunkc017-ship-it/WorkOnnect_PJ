@@ -1,3 +1,19 @@
 <?php // Worker stats shown on the public profile (included by worker.php): how often the worker is hired and how fast they reply
-$st=$pdo->prepare("SELECT COUNT(*) sent,SUM(j.worker_id=o.worker_id AND j.status<>'cancelled') won,ROUND(AVG(CASE WHEN TIMESTAMPDIFF(MINUTE,j.created,o.created) BETWEEN 0 AND 4320 THEN TIMESTAMPDIFF(MINUTE,j.created,o.created) END)) rt FROM offers o JOIN jobs j ON j.id=o.job_id WHERE o.worker_id=?");$st->execute([$id]);$st=$st->fetch();
-if($st&&$st['sent']>=3)echo '<p><span class="material-icons mi">trending_up</span> Hired on <b>'.round(100*$st['won']/$st['sent']).'%</b> of offers'.($st['rt']!==null?' · usually replies in about <b>'.($st['rt']<60?(int)$st['rt'].' min':round($st['rt']/60).' h').'</b>':'').'</p>';
+$st = $pdo->prepare(
+    "SELECT COUNT(*) sent,SUM(j.worker_id=o.worker_id AND j.status<>'cancelled') won,ROUND(AVG(CASE WHEN TIMESTAMPDIFF(MINUTE,j.created,o.created) BETWEEN 0 AND 4320 THEN TIMESTAMPDIFF(MINUTE,j.created,o.created) END)) rt FROM offers o JOIN jobs j ON j.id=o.job_id WHERE o.worker_id=?",
+);
+$st->execute([$id]);
+$st = $st->fetch();
+if ($st && $st["sent"] >= 3) {
+    echo '<p><span class="material-icons mi">trending_up</span> Hired on <b>' .
+        round((100 * $st["won"]) / $st["sent"]) .
+        "%</b> of offers" .
+        ($st["rt"] !== null
+            ? " · usually replies in about <b>" .
+                ($st["rt"] < 60
+                    ? (int) $st["rt"] . " min"
+                    : round($st["rt"] / 60) . " h") .
+                "</b>"
+            : "") .
+        "</p>";
+}

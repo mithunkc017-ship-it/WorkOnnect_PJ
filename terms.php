@@ -1,5 +1,7 @@
 <?php // Terms of use (sample text for the project - have it reviewed before real-world launch)
-require 'config.php';head('Terms');?>
+require "config.php";
+head("Terms");
+?>
 <div class="card legal"><h2>Terms of Use</h2><p><small>Sample terms prepared for a student project. Get legal advice before using them for a real business.</small></p>
 <h3>1. What Workonnect is</h3><p>Workonnect is a platform that connects customers with independent skilled workers. We are not the employer of any worker and do not guarantee the quality of any job.</p>
 <h3>2. Accounts</h3><p>Give correct details, keep your password private and verify your email. You are responsible for everything done through your account. We may suspend accounts that break these terms.</p>
