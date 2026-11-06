@@ -29,7 +29,7 @@ $ph=$pdo->prepare("SELECT * FROM job_photos WHERE job_id=? ORDER BY id");$ph->ex
 if($ph||$canph){echo '<div class="card"><b><span class="material-icons mi">photo_camera</span> Work photos</b><div class="grid">';
  foreach(['before'=>'Before','after'=>'After'] as $k=>$lab){echo '<div><b>'.$lab.'</b><br>';$has=false;
   foreach($ph as $x)if($x['kind']==$k){$has=true;echo '<img class="p" style="max-height:160px;margin:4px 0" src="'.e($x['photo']).'">';
-   if($wk&&$j['status']!='completed')echo '<form method="post" style="display:inline"><input type="hidden" name="a" value="wphotodel"><input type="hidden" name="pid" value="'.$x['id'].'"><button style="background:#c00;padding:2px 8px">✕</button></form>';echo '<br>';}
+   if($wk&&$j['status']!='completed')echo '<form method="post" style="display:inline"><input type="hidden" name="a" value="wphotodel"><input type="hidden" name="pid" value="'.$x['id'].'"><button aria-label="Remove photo" title="Remove photo" style="background:#c00;padding:2px 8px"><span class="material-icons mi-xs">close</span></button></form>';echo '<br>';}
   if(!$has)echo '<small>No '.strtolower($lab).' photo yet</small>';echo '</div>';}
  echo '</div>';
  if($canph)echo '<form method="post" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" name="a" value="wphoto"><select name="kind"><option value="before">Before photo</option><option value="after">After photo</option></select><input type="file" name="photo" accept="image/*" required style="width:auto"><button>Upload</button></form><small>Photos are proof of work and help avoid disputes.</small>';
