@@ -9,7 +9,7 @@ if($_SERVER['REQUEST_METHOD']=='POST'){
  ->execute([$u['id'],$_POST['title'],$wk['skill'],$_POST['details'],$_POST['amount'],$_POST['location'],$_POST['phone'],(int)$_POST['price'],$_POST['slot']?:null,$w]);
  $id=$pdo->lastInsertId();notify($w,$u['name'].' sent you a job request: "'.$_POST['title'].'"',"job.php?id=$id");header("Location: job.php?id=$id");exit;}
 head('Hire Worker');?>
-<form class="card" method="post"><h2>🤝 Hire <?=e($wk['name'])?> (<?=e($wk['skill'])?>)</h2>
+<form class="card" method="post"><h2><span class="material-icons mi">handshake</span> Hire <?=e($wk['name'])?> (<?=e($wk['skill'])?>)</h2>
 <input name="title" placeholder="Job title" required><input name="amount" placeholder="Amount of work (e.g. 3 fans)" required>
 <textarea name="details" rows="3" placeholder="How should the work be done?" required></textarea>
 <input name="location" placeholder="Location" required><input name="phone" pattern="[0-9]{10}" placeholder="Phone (10 digits)" value="<?=e($u['phone'])?>" required>

@@ -15,7 +15,7 @@ function d_av($name,$s=30){$c=['#2f5bff','#22c55e','#f59e0b','#a855f7','#ef4444'
  $f=function($t){return function_exists('mb_substr')?mb_substr($t,0,1):substr($t,0,1);};$ini=strtoupper($f($p[0]??'?').(isset($p[1])?$f($p[1]):''));return '<span class="pd-av" style="width:'.$s.'px;height:'.$s.'px;background:'.$c[$i].'">'.e($ini).'</span>';}
 function d_pill($st){$m=['open'=>'blue','requested'=>'amber','assigned'=>'violet','in_progress'=>'amber','completed'=>'green','cancelled'=>'red'];return '<span class="pd-pill '.($m[$st]??'gray').'">'.e(ucfirst(str_replace('_',' ',(string)$st))).'</span>';}
 function d_kpi($label,$value,$sub='',$icon='',$hero=false,$delta=null){
- $d='';if($delta!==null)$d='<span class="pd-delta '.($delta>=0?'up':'down').'">'.($delta>=0?'▲ +':'▼ ').round($delta,1).'%</span>';
+ $d='';if($delta!==null)$d='<span class="pd-delta '.($delta>=0?'up':'down').'">'.($delta>=0?'<span class="material-icons mi-xs">arrow_upward</span> +':'<span class="material-icons mi-xs">arrow_downward</span> ').round($delta,1).'%</span>';
  return '<div class="pd-card pd-kpi'.($hero?' hero':'').'"><div class="pd-kt"><span class="pd-ic">'.$icon.'</span>'.$d.'</div><div class="pd-kv">'.$value.'</div><div class="pd-kl">'.e($label).'</div><div class="pd-ks">'.$sub.'</div></div>';}
 function d_line($labels,$series,$w=600,$h=230,$money=false){static $n=0;$n++; // smooth multi-series line chart (inline SVG)
  $pl=46;$pr=14;$pt=14;$pb=28;$iw=$w-$pl-$pr;$ih=$h-$pt-$pb;$c=count($labels);if(!$c)return '';

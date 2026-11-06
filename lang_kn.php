@@ -49,4 +49,19 @@ return [
 'Passwords do not match.'=>'ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.','Please accept the Terms and Privacy Policy.'=>'ದಯವಿಟ್ಟು ನಿಯಮಗಳು ಮತ್ತು ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ಒಪ್ಪಿಕೊಳ್ಳಿ.','Wrong email or password.'=>'ತಪ್ಪಾದ ಇಮೇಲ್ ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್.','Email already registered.'=>'ಈ ಇಮೇಲ್ ಈಗಾಗಲೇ ನೋಂದಾಯಿಸಲಾಗಿದೆ.',
 'Reset password'=>'ಪಾಸ್‌ವರ್ಡ್ ರೀಸೆಟ್','Forgot your password?'=>'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ?','Enter your email and we will send you a reset link.'=>'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ, ನಾವು ರೀಸೆಟ್ ಲಿಂಕ್ ಕಳುಹಿಸುತ್ತೇವೆ.','Sending…'=>'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ…','Remembered it?'=>'ನೆನಪಾಯಿತೇ?','Choose a new password.'=>'ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ಆರಿಸಿ.','Saving…'=>'ಉಳಿಸಲಾಗುತ್ತಿದೆ…','Verify email'=>'ಇಮೇಲ್ ಪರಿಶೀಲನೆ','Check your email.'=>'ನಿಮ್ಮ ಇಮೇಲ್ ನೋಡಿ.','Verifying…'=>'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…','6-digit code'=>'6 ಅಂಕೆಗಳ ಕೋಡ್',
 '🔓 Open Jobs'=>'🔓 ತೆರೆದ ಕೆಲಸಗಳು',
+
+// Material-icon nav keys (no emoji prefix, matching config.php v25)
+'Wallet'=>'ವಾಲೆಟ್',
+'Earnings'=>'ಗಳಿಕೆ',
+'My Work'=>'ನನ್ನ ಕೆಲಸ',
+'Get Verified'=>'ಪರಿಶೀಲನೆ ಪಡೆಯಿರಿ',
+'Open Jobs'=>'ತೆರೆದ ಕೆಲಸಗಳು',
+'Install app'=>'ಆ್ಯಪ್ ಇನ್ ಸ್ಟಾಲ್ ಮಾಡಿ',
+'Messages'=>'ಸಂದೇಶಗಳು',
+'ID-verified workers'=>'ಗುರುತು ಪರಿಶೀಲಿತ ಕೆಲಸಗಾರರು',
+'Emergency booking'=>'ತುರ್ತು ಬುಕಿಂಗ್',
+'Live chat'=>'ಲೈವ್ ಚಾಟ್',
+'Activity Log'=>'ಚಟುವಟಿಕೆ ಲಾಗ್',
+'Manage Service Categories'=>'ಸೇವಾ ವರ್ಗಗಳ ನಿರ್ವಹಣೆ',
+'Verification Requests'=>'ಪರಿಶೀಲನಾ ವಿನಂತಿಗಳು',
 ];

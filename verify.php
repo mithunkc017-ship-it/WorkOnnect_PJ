@@ -12,9 +12,9 @@ if($_SERVER['REQUEST_METHOD']=='POST'&&!$ver&&(!$v||$v['status']!='pending')){
   header('Location: verify.php');exit;}
  $msg='Please upload a clear JPG or PNG image under 3 MB.';}
 head('Get Verified');?>
-<div class="card" style="max-width:520px;margin:auto"><h2>✔ Get Verified</h2>
+<div class="card" style="max-width:520px;margin:auto"><h2><span class="material-icons mi-xs">verified</span> Get Verified</h2>
 <?php if($ver)echo '<p>'.badge(1).' You are a verified worker.</p>';
-elseif($v&&$v['status']=='pending')echo '<p>⏳ Your request is pending. The admin will review it soon.</p>';
+elseif($v&&$v['status']=='pending')echo '<p><span class="material-icons mi-xs">hourglass_empty</span> Your request is pending. The admin will review it soon.</p>';
 else{if($v&&$v['status']=='rejected')echo '<p class="err">Rejected: '.e($v['note']).'. You can apply again.</p>';?>
 <p>Upload a photo of a valid ID proof (JPG/PNG). Only the admin can see it. It is used only to verify you.</p><p class="err"><?=e($msg)?></p>
 <form method="post" enctype="multipart/form-data" style="box-shadow:none;padding:0"><input type="file" name="doc" accept="image/png,image/jpeg" required><button>Submit for Verification</button></form><?php }?></div>

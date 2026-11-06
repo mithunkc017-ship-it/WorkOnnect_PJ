@@ -5,23 +5,23 @@ $nW=(int)$c("SELECT COUNT(*) FROM users WHERE role='worker'");$nD=(int)$c("SELEC
 $nV=(int)$c("SELECT COUNT(*) FROM users WHERE role='worker' AND verified=1");$avg=round($c("SELECT AVG(stars) FROM reviews"),1);
 $w=$pdo->query("SELECT u.name,u.skill,(SELECT ROUND(AVG(stars),1) FROM reviews WHERE worker_id=u.id) r,(SELECT COUNT(*) FROM reviews WHERE worker_id=u.id) rc FROM users u WHERE role='worker' AND verified=1 ORDER BY r DESC LIMIT 6")->fetchAll();
 $q=$pdo->query("SELECT r.stars,r.comment,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.stars>=4 AND r.comment<>'' ORDER BY r.id DESC LIMIT 3")->fetchAll();
-$ico=['Electrician'=>'⚡','Plumber'=>'🚿','Carpenter'=>'🪚','Painter'=>'🎨','Cleaner'=>'🧹','Driver'=>'🚗','Mechanic'=>'🔧','AC Technician'=>'❄️'];?>
+$ico=['Electrician'=>'<span class="material-icons mi">bolt</span>','Plumber'=>'<span class="material-icons mi">plumbing</span>','Carpenter'=>'<span class="material-icons mi">carpenter</span>','Painter'=>'<span class="material-icons mi">palette</span>','Cleaner'=>'<span class="material-icons mi">cleaning_services</span>','Driver'=>'<span class="material-icons mi">directions_car</span>','Mechanic'=>'<span class="material-icons mi">build</span>','AC Technician'=>'<span class="material-icons mi">ac_unit</span>'];?>
 <div class="hero"><h1><?=t('Find Skilled Workers Near You')?></h1><p><?=t('Post a job, get offers, track progress – all in one place.')?></p>
-<form class="hs" action="workers.php" method="get"><select name="cat"><option value="">All services</option><?php foreach($CATS as $x)echo '<option>'.e($x).'</option>';?></select><input name="ar" placeholder="Your area (e.g. Sagar)"><button>🔍 Search</button></form>
+<form class="hs" action="workers.php" method="get"><select name="cat"><option value="">All services</option><?php foreach($CATS as $x)echo '<option>'.e($x).'</option>';?></select><input name="ar" placeholder="Your area (e.g. Sagar)"><button><span class="material-icons mi">search</span> Search</button></form>
 <a class="btn" href="post_job.php"><?=t('Post a Job')?></a> <a class="btn" href="register.php"><?=t('Join as Worker')?></a>
-<div class="trust"><span>✔ ID-verified workers</span><span>🚨 Emergency booking</span><span>💬 Live chat</span><span>🗣 ಕನ್ನಡ + English</span></div></div>
-<div class="stats"><div class="stat"><b data-n="<?=$nW?>">0</b><span>Workers</span></div><div class="stat"><b data-n="<?=$nV?>">0</b><span>Verified</span></div><div class="stat"><b data-n="<?=$nD?>">0</b><span>Jobs completed</span></div><div class="stat"><b><?=$avg?:'–'?> ⭐</b><span>Average rating</span></div></div>
-<h2><?=t('Services')?></h2><div class="grid"><?php foreach($CATS as $x)echo '<a class="card svc" href="workers.php?cat='.urlencode($x).'"><i>'.($ico[$x]??'🔧').'</i>'.e($x).'</a>';?></div>
+<div class="trust"><span><span class="material-icons mi-xs">verified</span> ID-verified workers</span><span><span class="material-icons mi">emergency</span> Emergency booking</span><span><span class="material-icons mi">chat</span> Live chat</span><span>🗣 ಕನ್ನಡ + English</span></div></div>
+<div class="stats"><div class="stat"><b data-n="<?=$nW?>">0</b><span>Workers</span></div><div class="stat"><b data-n="<?=$nV?>">0</b><span>Verified</span></div><div class="stat"><b data-n="<?=$nD?>">0</b><span>Jobs completed</span></div><div class="stat"><b><?=$avg?:'–'?> <span class="material-icons mi-xs">star</span></b><span>Average rating</span></div></div>
+<h2><?=t('Services')?></h2><div class="grid"><?php foreach($CATS as $x)echo '<a class="card svc" href="workers.php?cat='.urlencode($x).'"><i>'.($ico[$x]??'<span class="material-icons mi">build</span>').'</i>'.e($x).'</a>';?></div>
 <h2><?=t('How it works')?></h2><div class="grid"><div class="card"><?=t('1. Customer posts a job')?></div><div class="card"><?=t('2. Workers send offers')?></div><div class="card"><?=t('3. Accept the best offer')?></div><div class="card"><?=t('4. Track job progress')?></div></div>
 <h2>Why Workonnect?</h2><div class="grid">
-<div class="card feat"><i>🛡️</i><b>Verified &amp; trusted</b><p>Workers upload ID proof; Top Rated, Gold, Silver and Bronze levels show real performance.</p></div>
-<div class="card feat"><i>🚨</i><b>Emergency jobs</b><p>Mark a job urgent and it appears first for workers.</p></div>
-<div class="card feat"><i>📍</i><b>Nearby workers</b><p>Use "Near me" to find the closest available worker.</p></div>
-<div class="card feat"><i>💸</i><b>Fair prices</b><p>Compare offers, apply coupons, pay from wallet. Only a 10% platform fee.</p></div>
-<div class="card feat"><i>💬</i><b>Chat &amp; tracking</b><p>Talk to your worker and follow every step of the job.</p></div>
-<div class="card feat"><i>🔔</i><b>Instant alerts</b><p>Live notification bell for offers, payments and updates.</p></div></div>
-<h2><?=t('Verified Workers')?></h2><div class="grid"><?php foreach($w as $x)echo '<div class="card"><b>'.e($x['name']).'</b><br>'.e($x['skill']).'<br>'.($x['r']?$x['r'].' ⭐ ('.$x['rc'].')<br>':'').badge(1).'</div>';if(!$w)echo '<p>No verified workers yet.</p>';?></div>
-<?php if($q){echo '<h2>What customers say</h2><div class="grid">';foreach($q as $x)echo '<div class="card quote">'.str_repeat('⭐',(int)$x['stars']).'<q>'.e($x['comment']).'</q><small>– '.e($x['name']).'</small></div>';echo '</div>';}?>
+<div class="card feat"><i><span class="material-icons mi">security</span></i><b>Verified &amp; trusted</b><p>Workers upload ID proof; Top Rated, Gold, Silver and Bronze levels show real performance.</p></div>
+<div class="card feat"><i><span class="material-icons mi">emergency</span></i><b>Emergency jobs</b><p>Mark a job urgent and it appears first for workers.</p></div>
+<div class="card feat"><i><span class="material-icons mi">place</span></i><b>Nearby workers</b><p>Use "Near me" to find the closest available worker.</p></div>
+<div class="card feat"><i><span class="material-icons mi">attach_money</span></i><b>Fair prices</b><p>Compare offers, apply coupons, pay from wallet. Only a 10% platform fee.</p></div>
+<div class="card feat"><i><span class="material-icons mi">chat</span></i><b>Chat &amp; tracking</b><p>Talk to your worker and follow every step of the job.</p></div>
+<div class="card feat"><i><span class="material-icons mi">notifications</span></i><b>Instant alerts</b><p>Live notification bell for offers, payments and updates.</p></div></div>
+<h2><?=t('Verified Workers')?></h2><div class="grid"><?php foreach($w as $x)echo '<div class="card"><b>'.e($x['name']).'</b><br>'.e($x['skill']).'<br>'.($x['r']?$x['r'].' <span class="material-icons mi-xs">star</span> ('.$x['rc'].')<br>':'').badge(1).'</div>';if(!$w)echo '<p>No verified workers yet.</p>';?></div>
+<?php if($q){echo '<h2>What customers say</h2><div class="grid">';foreach($q as $x)echo '<div class="card quote">'.str_repeat('<span class="material-icons mi-xs">star</span>',(int)$x['stars']).'<q>'.e($x['comment']).'</q><small>– '.e($x['name']).'</small></div>';echo '</div>';}?>
 <h2>Quick answers</h2>
 <details class="card"><summary>Is payment safe?</summary><p>Pay by UPI, card, net banking, cash or wallet. We never store your card or UPI details.</p></details>
 <details class="card"><summary>How do I become a verified worker?</summary><p>Register as a worker, open "Get Verified" and upload your ID. Admin approves it and your badge appears.</p></details>

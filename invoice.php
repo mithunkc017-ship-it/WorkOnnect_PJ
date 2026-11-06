@@ -17,5 +17,5 @@ $orig=$j['price']+$j['discount'];$fee=(int)$j['commission'];$share=$j['price']-$
 <table><tr><td>Platform fee (<?=e(PLATFORM_NAME)?>, 10%)</td><td style="text-align:right">₹<?=$fee?></td></tr><tr><td>Worker receives<?=$j['tip']?' (incl. tip ₹'.$j['tip'].')':''?></td><td style="text-align:right">₹<?=$share+$j['tip']?></td></tr></table>
 <p>Payment method: <b><?=e($j['pay_method'])?></b><?=$j['pay_ref']?' · Reference: <b>'.e($j['pay_ref']).'</b>':''?> · Status: <span class="ok">PAID</span></p>
 <?php if($u['role']!='customer')echo '<p>Worker payment: '.($j['settled']?'<span class="ok">Paid on '.e($j['settled_at']).' (ref '.e($j['settle_ref']).')</span>':'Pending').'</p>';?>
-<p class="no-print"><button onclick="window.print()">🖨 Print / Save as PDF</button> <a href="job.php?id=<?=$id?>">Back</a></p></div></main>
+<p class="no-print"><button onclick="window.print()"><span class="material-icons mi">print</span> Print / Save as PDF</button> <a href="job.php?id=<?=$id?>">Back</a></p></div></main>
 <style>@media print{.no-print,nav{display:none}}</style></body></html>

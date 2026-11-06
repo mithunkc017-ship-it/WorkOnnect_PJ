@@ -9,11 +9,11 @@ if($_SERVER['REQUEST_METHOD']=='POST'){$a=$_POST['a']??'';
  if($a=='delprice')$pdo->prepare("DELETE FROM service_prices WHERE id=? AND worker_id=?")->execute([(int)$_POST['id'],$u['id']]);
  header('Location: portfolio.php');exit;}
 head('My Work');?>
-<h2>💰 My Price List</h2>
+<h2><span class="material-icons mi">payments</span> My Price List</h2>
 <form method="post" style="display:flex;gap:8px"><input type="hidden" name="a" value="price"><input name="service" placeholder="Service (e.g. Fan repair)" required><input type="number" name="price" min="1" placeholder="₹ price" required><button>Add</button></form>
 <table><?php $s=$pdo->prepare("SELECT * FROM service_prices WHERE worker_id=?");$s->execute([$u['id']]);
 foreach($s as $x)echo '<tr><td>'.e($x['service']).'</td><td>₹'.$x['price'].'</td><td><form method="post"><input type="hidden" name="a" value="delprice"><input type="hidden" name="id" value="'.$x['id'].'"><button style="background:#c00">Delete</button></form></td></tr>';?></table>
-<h2>🖼 My Portfolio</h2>
+<h2><span class="material-icons mi">photo_library</span> My Portfolio</h2>
 <form method="post" enctype="multipart/form-data" style="display:flex;gap:8px"><input type="hidden" name="a" value="photo"><input type="file" name="photo" accept="image/png,image/jpeg" required><input name="caption" placeholder="Caption"><button>Upload</button></form>
 <div class="grid"><?php $s=$pdo->prepare("SELECT * FROM portfolio WHERE worker_id=?");$s->execute([$u['id']]);
 foreach($s as $x)echo '<div class="card"><img class="p" src="'.e($x['photo']).'"><br>'.e($x['caption']).'<form method="post"><input type="hidden" name="a" value="delphoto"><input type="hidden" name="id" value="'.$x['id'].'"><button style="background:#c00">Delete</button></form></div>';?></div>
