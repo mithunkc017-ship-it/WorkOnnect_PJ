@@ -1,6 +1,19 @@
 <?php
 require "config.php";
+ob_start();
 head("Why Workonnect");
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the Why Workonnect page header.");
+}
+echo $pageHead;
 ?>
 <section aria-labelledby="why-title">
     <h1 id="why-title">Local services, with the details in one place</h1>

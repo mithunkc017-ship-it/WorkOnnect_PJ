@@ -1,6 +1,19 @@
 <?php
 require "config.php";
+ob_start();
 head("How it works");
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the How It Works page header.");
+}
+echo $pageHead;
 ?>
 <section aria-labelledby="how-title">
     <h1 id="how-title">A clearer way to get local work done</h1>

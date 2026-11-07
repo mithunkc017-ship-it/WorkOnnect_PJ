@@ -23,7 +23,20 @@ $s->execute([
     $ar,
     "%" . $ar . "%",
 ]);
+ob_start();
 head("Find Workers");
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the Find Workers page header.");
+}
+echo $pageHead;
 echo d_top("workers.php");
 ?>
 <h2>Find Workers</h2><form method="get" style="display:flex;gap:8px;flex-wrap:wrap"><input name="q" placeholder="Search by name" value="<?= e(

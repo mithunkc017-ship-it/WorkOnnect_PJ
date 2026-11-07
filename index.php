@@ -1,6 +1,7 @@
-<?php // Homepage v14: animated hero, live stats, services, features, testimonials, FAQ (same data & functionality as v13)
+<?php // Homepage v15: premium landing design. Same data, links and form as the previous homepage. English only - no Kannada on this page.
+// Styles: landing.css (scoped to body.wk-page) | behaviour: landing.js | icons: landing_icons.svg | nav/footer: landing_nav.php, landing_footer.php
 require "config.php";
-head("Home");
+if (($_SESSION["lang"] ?? "en") == "kn" && ob_get_level() > 1) ob_end_flush(); // English-only page: close config.php's Kannada translation buffer. The saved language preference is not changed, other pages stay as they are.
 $c = fn($q) => (float) $pdo->query($q)->fetchColumn();
 $nW = (int) $c("SELECT COUNT(*) FROM users WHERE role='worker'");
 $nD = (int) $c("SELECT COUNT(*) FROM jobs WHERE status='completed'");
@@ -11,918 +12,158 @@ $q = $pdo
         "SELECT r.stars,r.comment,u.name FROM reviews r JOIN users u ON u.id=r.customer_id WHERE r.stars>=4 AND r.comment<>'' ORDER BY r.id DESC LIMIT 3",
     )
     ->fetchAll();
-$ico = [
-    "Electrician" => "bolt",
-    "Plumber" => "plumbing",
-    "Carpenter" => "carpenter",
-    "Painter" => "palette",
-    "Cleaner" => "cleaning_services",
-    "Driver" => "directions_car",
-    "Mechanic" => "build",
-    "AC Technician" => "ac_unit",
-];
-?>
-<style>/* ===== Landing page v14 (scoped to .lp so other pages are untouched) ===== */
-.lp {
-  --o: #ff9800;
-  --t: #1a6b7c;
-  --t2: #2f8a9b;
-  --v: #7b5cff;
-}
-.lp h2 {
-  position: relative;
-  display: inline-block;
-  margin: 46px 0 4px;
-  padding-bottom: 10px;
-}
-.lp h2::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 48px;
-  height: 4px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, var(--o), #ffcc70);
-  transition: width 0.6s ease;
-}
-.lp h2.in::after {
-  width: 84px;
-}
-.lp .grid .card {
-  animation: none;
-}
 
-/* reveal on scroll (only when JS is running, so content is never hidden without it) */
-.lp.js .rv {
-  opacity: 0;
-  transform: translateY(26px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.lp.js .rv.in {
-  opacity: 1;
-  transform: none;
-}
-.lp.js .grid.rv,
-.lp.js .stats.rv {
-  opacity: 1;
-  transform: none;
-}
-.lp.js .grid.rv > *,
-.lp.js .stats.rv > *,
-.lp.js details.rv {
-  opacity: 0;
-  transform: translateY(28px) scale(0.97);
-  transition:
-    opacity 0.6s ease,
-    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.25s,
-    border-color 0.25s;
-}
-.lp.js .grid.rv.in > *,
-.lp.js .stats.rv.in > *,
-.lp.js details.rv.in {
-  opacity: 1;
-  transform: none;
-}
-.lp.js .rv.in > :nth-child(2) {
-  transition-delay: 0.08s;
-}
-.lp.js .rv.in > :nth-child(3) {
-  transition-delay: 0.16s;
-}
-.lp.js .rv.in > :nth-child(4) {
-  transition-delay: 0.24s;
-}
-.lp.js .rv.in > :nth-child(5) {
-  transition-delay: 0.32s;
-}
-.lp.js .rv.in > :nth-child(6) {
-  transition-delay: 0.4s;
-}
-.lp.js .rv.in > :nth-child(n + 7) {
-  transition-delay: 0.48s;
-}
-.lp.js .grid.rv.in > .card:hover {
-  transform: translateY(-6px);
-  transition-delay: 0s;
-}
+// ---- presentation helpers (no database writes, no business logic) ----
+$u = me();
+$wkIco = ["Electrician" => "bolt", "Plumber" => "drop", "Carpenter" => "ruler", "Painter" => "roller", "Cleaner" => "sparkle", "Driver" => "car", "Mechanic" => "wrench", "AC Technician" => "snow"];
+$wkIconOf = function ($cat) use ($wkIco) { return $wkIco[$cat] ?? "tools"; };
+$wkSvg = function ($id, $cls = "wk-i") { return '<svg class="' . $cls . '" aria-hidden="true" focusable="false"><use href="#i-' . $id . '"/></svg>'; };
+$wkStars = function ($n) { $o = ""; for ($i = 1; $i <= 5; $i++) $o .= '<svg class="wk-star' . ($i <= (int) $n ? " on" : "") . '" aria-hidden="true" focusable="false"><use href="#i-star"/></svg>'; return $o; };
+$wkIni = function ($name) { return preg_match("/./u", (string) $name, $m) ? $m[0] : "?"; }; // first character (UTF-8 safe)
+$wkAvg = $avg ? $avg : "–";
+$wkLinks = [["index.php", "Home", " is-active", ' aria-current="page"'], ["workers.php", "Find Workers", "", ""], ["how-it-works.php", "How It Works", "", ""], ["why-workonnect.php", "Why Workonnect", "", ""], ["quick-answers.php", "Quick Answers", "", ""]];
+$wkMenuIco = ["post_job.php" => "file", "wallet.php" => "wallet", "open_jobs.php" => "tools", "profile.php" => "user", "earnings.php" => "wallet", "portfolio.php" => "roller", "verify.php" => "shield", "categories.php" => "tools", "complaints.php" => "alert", "verifications.php" => "shield", "coupons.php" => "wallet", "log.php" => "activity"];
 
-/* hero */
-.lp .hero {
-  padding: clamp(54px, 9vw, 96px) 20px clamp(46px, 7vw, 70px);
-  border-radius: 28px;
-  background: linear-gradient(
-    125deg,
-    #115564,
-    #1a6b7c 35%,
-    #2f8a9b 62%,
-    #6a54e8
-  );
-  background-size: 260% 260%;
-  box-shadow: 0 24px 60px #1a6b7c45;
-}
-.lp .hero::before {
-  width: 300px;
-  height: 300px;
-  left: -90px;
-  top: -110px;
-  background: radial-gradient(circle, #ffffff2e, #ffffff05 70%);
-}
-.lp .hero::after {
-  width: 260px;
-  height: 260px;
-  right: -70px;
-  bottom: -90px;
-  background: radial-gradient(circle, #ffb347aa, #ff980000 70%);
-}
-.lp .orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(2px);
-  pointer-events: none;
-  animation: floaty 11s ease-in-out infinite;
-}
-.lp .orb.a {
-  width: 90px;
-  height: 90px;
-  left: 12%;
-  top: 58%;
-  background: #ffffff14;
-  animation-delay: -2s;
-}
-.lp .orb.b {
-  width: 56px;
-  height: 56px;
-  right: 16%;
-  top: 18%;
-  background: #ff980040;
-  animation-delay: -6s;
-}
-.lp .orb.c {
-  width: 34px;
-  height: 34px;
-  left: 24%;
-  top: 14%;
-  background: #ffffff22;
-  animation-delay: -4s;
-}
-.lp .fi {
-  position: absolute;
-  font-size: clamp(22px, 3.4vw, 38px);
-  opacity: 0.9;
-  pointer-events: none;
-  filter: drop-shadow(0 6px 10px #0004);
-  animation: bob 6s ease-in-out infinite;
-  z-index: 0;
-}
-.lp .fi.f1 {
-  left: 6%;
-  top: 20%;
-}
-.lp .fi.f2 {
-  right: 7%;
-  top: 30%;
-  animation-delay: -1.5s;
-}
-.lp .fi.f3 {
-  left: 10%;
-  bottom: 14%;
-  animation-delay: -3s;
-}
-.lp .fi.f4 {
-  right: 11%;
-  bottom: 12%;
-  animation-delay: -4.5s;
-}
-.lp .pill {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff1f;
-  border: 1px solid #ffffff40;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  margin-bottom: 16px;
-  animation: fadeUp 0.7s ease both;
-}
-.lp .pill i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #5cffb1;
-  box-shadow: 0 0 0 0 #5cffb199;
-  animation: ping 1.8s ease infinite;
-}
-.lp .hero h1 {
-  margin: 0 0 10px;
-  background: linear-gradient(
-    90deg,
-    #fff 0%,
-    #fff 40%,
-    #ffd9a0 55%,
-    #fff 70%,
-    #fff 100%
-  );
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation:
-    fadeUp 0.8s 0.1s ease both,
-    shine 6s 1.2s linear infinite;
-  text-shadow: none;
-}
-.lp .hero p {
-  font-size: clamp(15px, 2.4vw, 18px);
-  max-width: 560px;
-  margin: 0 auto;
-  opacity: 0.95;
-  animation: fadeUp 0.8s 0.22s ease both;
-}
-.lp .hs {
-  max-width: 700px;
-  margin: 28px auto 18px;
-  padding: 10px;
-  border-radius: 20px;
-  box-shadow: 0 18px 44px #0000004d;
-  transition:
-    box-shadow 0.3s,
-    transform 0.3s;
-  animation: fadeUp 0.8s 0.34s ease both;
-  text-align: left;
-}
-.lp .hs:focus-within {
-  box-shadow:
-    0 0 0 4px #ff980055,
-    0 18px 44px #0000004d;
-  transform: translateY(-2px);
-}
-.lp .hs select,
-.lp .hs input {
-  border-radius: 12px;
-  padding: 13px 14px;
-}
-.lp .hs button {
-  border-radius: 12px;
-  padding: 13px 24px;
-  background: linear-gradient(135deg, #ff9800, #ff6f3c);
-  font-weight: 600;
-}
-.lp .hero > .btn {
-  padding: 13px 26px;
-  border-radius: 12px;
-  font-weight: 600;
-  margin: 4px;
-  animation: fadeUp 0.8s 0.46s ease both;
-  transition:
-    transform 0.2s,
-    box-shadow 0.25s;
-}
-.lp .hero > .btn:first-of-type {
-  background: linear-gradient(135deg, #ff9800, #ff6f3c);
-  animation:
-    fadeUp 0.8s 0.46s ease both,
-    glow 2.8s 1.4s ease infinite;
-}
-.lp .hero > .btn + .btn {
-  background: #ffffff1f;
-  border: 1.5px solid #ffffff80;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.lp .hero > .btn + .btn:hover {
-  background: #fff;
-  color: var(--t);
-  box-shadow: 0 8px 20px #0003;
-}
-.lp .trust {
-  margin-top: 22px;
-  gap: 10px;
-  animation: fadeUp 0.8s 0.58s ease both;
-}
-.lp .trust span {
-  background: #ffffff1a;
-  border: 1px solid #ffffff33;
-  padding: 6px 14px;
-  border-radius: 999px;
-  transition:
-    transform 0.2s,
-    background 0.2s;
-}
-.lp .trust span:hover {
-  transform: translateY(-3px);
-  background: #ffffff33;
-}
-
-/* stats */
-.lp .stats {
-  margin: -26px 14px 0;
-  position: relative;
-  z-index: 2;
-}
-.lp .stat {
-  border-bottom: 0;
-  border-radius: 18px;
-  padding: 20px 12px;
-  background: #ffffffee;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 12px 30px #1a6b7c22;
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.25s,
-    box-shadow 0.25s;
-}
-.lp .stat::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--o), #ffcc70, var(--t2));
-  background-size: 200% 100%;
-  animation: slide 4s linear infinite;
-}
-.lp .stat:hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 18px 36px #1a6b7c33;
-}
-.lp .stat b {
-  font-size: clamp(26px, 4vw, 36px);
-  background: linear-gradient(135deg, var(--t), var(--v));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* cards */
-.lp .card {
-  border: 1px solid #1a6b7c14;
-  position: relative;
-  overflow: hidden;
-}
-.lp .card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    260px circle at var(--mx, 50%) var(--my, 0%),
-    #ff98001c,
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-.lp .card:hover::before {
-  opacity: 1;
-}
-.lp .card:hover {
-  border-color: #1a6b7c40;
-}
-.lp a.svc {
-  padding: 24px 14px;
-}
-.lp .svc i {
-  display: grid;
-  place-items: center;
-  flex: 0 0 62px;
-  width: 62px;
-  height: 62px;
-  padding: 0;
-  line-height: 1;
-  margin: 0 auto 12px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #e6f3f5, #fff1dc);
-  font-size: 30px;
-  transition:
-    transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1),
-    background 0.3s;
-}
-.lp .svc i .material-icons {
-  display: block;
-  width: auto;
-  height: auto;
-  margin: 0;
-  font-size: 34px;
-  line-height: 1;
-  vertical-align: middle;
-}
-.lp .svc:hover i {
-  transform: scale(1.15) rotate(-8deg);
-  background: linear-gradient(135deg, #fff1dc, #ffe0b0);
-}
-.lp .feat {
-  border-top: 0;
-}
-.lp .feat::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--t), var(--t2), var(--o));
-}
-.lp .feat i {
-  display: grid;
-  place-items: center;
-  flex: 0 0 54px;
-  width: 54px;
-  height: 54px;
-  padding: 0;
-  line-height: 1;
-  border-radius: 16px;
-  background: #e6f3f5;
-  font-size: 26px;
-  margin-bottom: 12px;
-  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-.lp .feat i .material-icons {
-  display: block;
-  width: auto;
-  height: auto;
-  margin: 0;
-  font-size: 30px;
-  line-height: 1;
-  vertical-align: middle;
-}
-.lp .feat:hover i {
-  transform: scale(1.12) rotate(6deg);
-}
-.lp .feat b {
-  font-size: 16px;
-}
-.lp .step {
-  padding-top: 26px;
-  font-weight: 600;
-  counter-increment: st;
-}
-.lp .step::after {
-  content: "";
-  position: absolute;
-  right: -30px;
-  bottom: -30px;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ff980030, transparent 70%);
-}
-.lp .how {
-  counter-reset: st;
-}
-.lp .vw {
-  text-align: center;
-  padding: 22px 14px;
-}
-.lp .av {
-  width: 58px;
-  height: 58px;
-  margin: 0 auto 10px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 22px;
-  background: linear-gradient(135deg, var(--t), var(--v));
-  box-shadow:
-    0 0 0 4px #fff,
-    0 0 0 6px #1a6b7c33;
-  transition: transform 0.3s;
-}
-.lp .vw:hover .av {
-  transform: scale(1.1) rotate(-6deg);
-}
-.lp .vw b {
-  font-size: 16px;
-}
-.lp .quote {
-  border-left: 0;
-  padding-top: 30px;
-}
-.lp .quote::after {
-  content: "“";
-  position: absolute;
-  right: 14px;
-  top: -6px;
-  font-size: 84px;
-  line-height: 1;
-  color: #ff980030;
-  font-family: Georgia, serif;
-}
-.lp details.card {
-  margin: 10px 0;
-  transition:
-    box-shadow 0.25s,
-    border-color 0.25s;
-}
-.lp details.card summary {
-  list-style: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
-.lp details.card summary::-webkit-details-marker {
-  display: none;
-}
-.lp details.card summary::after {
-  content: "+";
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: #e6f3f5;
-  color: var(--t);
-  font-size: 20px;
-  transition:
-    transform 0.3s,
-    background 0.3s;
-}
-.lp details[open].card summary::after {
-  transform: rotate(135deg);
-  background: var(--o);
-  color: #fff;
-}
-.lp details[open].card {
-  border-color: #ff980066;
-  box-shadow: 0 10px 24px #ff98001f;
-}
-.lp details[open] p {
-  animation: fadeUp 0.35s ease;
-}
-
-/* closing call-to-action */
-.lp .lpcta {
-  margin: 54px 0 10px;
-  text-align: center;
-  color: #fff;
-  border-radius: 26px;
-  padding: clamp(34px, 6vw, 56px) 20px;
-  background: linear-gradient(125deg, #115564, #1a6b7c, #6a54e8);
-  background-size: 220% 220%;
-  animation: gradientShift 10s ease infinite;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 20px 50px #1a6b7c40;
-}
-.lp .lpcta::before {
-  content: "";
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  right: -60px;
-  top: -100px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ffb347aa, transparent 70%);
-  animation: floaty 9s ease-in-out infinite;
-}
-.lp .lpcta h2 {
-  margin: 0 0 8px;
-  color: #fff;
-  padding: 0;
-  display: block;
-}
-.lp .lpcta h2::after {
-  display: none;
-}
-.lp .lpcta p {
-  margin: 0 0 20px;
-  opacity: 0.92;
-  position: relative;
-}
-.lp .lpcta .btn {
-  position: relative;
-  margin: 4px;
-  padding: 13px 26px;
-  border-radius: 12px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #ff9800, #ff6f3c);
-}
-.lp .lpcta .btn + .btn {
-  background: #fff;
-  color: var(--t);
-}
-
-/* scroll progress + back-to-top polish */
-#sp {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 3px;
-  width: 0;
-  z-index: 100;
-  background: linear-gradient(90deg, #ff9800, #7b5cff);
-  transition: width 0.1s linear;
-}
-#up {
-  box-shadow: 0 8px 18px #1a6b7c55;
-  animation: pop 0.4s ease;
-}
-
-/* dark mode */
-.dark .lp .stat {
-  background: #1e2638ee;
-}
-.dark .lp .stat b {
-  background: linear-gradient(135deg, #7fe0f0, #b3a1ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-.dark .lp .svc i,
-.dark .lp .feat i {
-  background: linear-gradient(135deg, #26405a, #3a3320);
-}
-.dark .lp .card {
-  border-color: #ffffff14;
-}
-.dark .lp .av {
-  box-shadow:
-    0 0 0 4px #1e2638,
-    0 0 0 6px #7fe0f044;
-}
-.dark .lp details.card summary::after {
-  background: #2a3350;
-  color: #8ab4ff;
-}
-
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-4deg);
-  }
-  50% {
-    transform: translateY(-14px) rotate(6deg);
-  }
-}
-@keyframes shine {
-  0% {
-    background-position: 150% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-@keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 #ff980066;
-  }
-  50% {
-    box-shadow: 0 0 0 12px #ff980000;
-  }
-}
-@keyframes ping {
-  0% {
-    box-shadow: 0 0 0 0 #5cffb199;
-  }
-  80%,
-  100% {
-    box-shadow: 0 0 0 9px #5cffb100;
-  }
-}
-@keyframes slide {
-  to {
-    background-position: 200% 0;
-  }
-}
-@media (max-width: 700px) {
-  .lp .fi {
-    display: none;
-  }
-  .lp .stats {
-    margin: -20px 4px 0;
-  }
-  .lp .hs {
-    border-radius: 16px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp.js .rv,
-  .lp.js .rv > *,
-  .lp.js details.rv {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .lp .hero h1 {
-    -webkit-text-fill-color: #fff;
-  }
-}
-</style>
-<div id="sp"></div>
-<div class="lp">
-    <script>
-        document.currentScript.parentNode.classList.add("js");
-    </script>
-
-    <section class="hero" aria-labelledby="home-title">
-        <span class="orb a"></span>
-        <span class="orb b"></span>
-        <span class="orb c"></span>
-        <span class="material-icons fi f1" aria-hidden="true">bolt</span>
-        <span class="material-icons fi f2" aria-hidden="true">build</span>
-        <span class="material-icons fi f3" aria-hidden="true">palette</span>
-        <span class="material-icons fi f4" aria-hidden="true">cleaning_services</span>
-
-        <span class="pill"><i></i><span class="material-icons mi-xs" aria-hidden="true">verified</span>Trusted local professionals · Karnataka</span>
-        <h1 id="home-title"><?= t("Find Skilled Workers Near You") ?></h1>
-        <p><?= t(
-            "Post a job, get offers, track progress – all in one place.",
-        ) ?></p>
-
-        <form class="hs" action="workers.php" method="get">
-            <select name="cat">
-                <option value="">All services</option>
-                <?php foreach ($CATS as $x) { ?>
-                    <option><?= e($x) ?></option>
-                <?php } ?>
-            </select>
-            <input name="ar" placeholder="Your area (e.g. Sagar)">
-            <button><span class="material-icons mi" aria-hidden="true">search</span>Search</button>
-        </form>
-
-        <a class="btn" href="post_job.php"><?= t("Post a Job") ?></a>
-        <a class="btn" href="register.php"><?= t("Join as Worker") ?></a>
-
-        <div class="trust">
-            <span><span class="material-icons mi-xs" aria-hidden="true">verified</span>ID-verified workers</span>
-            <span><span class="material-icons mi-xs" aria-hidden="true">emergency</span>Emergency booking</span>
-            <span><span class="material-icons mi-xs" aria-hidden="true">chat</span>Live chat</span>
-        </div>
-    </section>
-
-    <div class="stats rv">
-        <div class="stat">
-            <b data-n="<?= $nW ?>">0</b>
-            <span>Workers</span>
-        </div>
-        <div class="stat">
-            <b data-n="<?= $nV ?>">0</b>
-            <span>Verified</span>
-        </div>
-        <div class="stat">
-            <b data-n="<?= $nD ?>">0</b>
-            <span>Jobs completed</span>
-        </div>
-        <div class="stat">
-            <b><?= $avg ?:
-                "–" ?> <span class="material-icons mi-xs" aria-label="stars">star</span></b>
-            <span>Average rating</span>
-        </div>
-    </div>
-
-    <section aria-labelledby="services-title">
-        <h2 id="services-title" class="rv"><?= t("Services") ?></h2>
-        <div class="grid rv">
-            <?php foreach ($CATS as $x) { ?>
-                <a class="card svc" href="workers.php?cat=<?= urlencode($x) ?>">
-                    <i><span class="material-icons" aria-hidden="true"><?= $ico[
-                        $x
-                    ] ?? "build" ?></span></i>
-                    <?= e($x) ?>
-                </a>
-            <?php } ?>
-        </div>
-    </section>
-
-    <section aria-labelledby="explore-title">
-        <h2 id="explore-title" class="rv">Explore Workonnect</h2>
-        <p>Learn how the marketplace works, what to expect, and how to get started.</p>
-        <div class="grid rv">
-            <a class="card feat" href="how-it-works.php">
-                <i><span class="material-icons" aria-hidden="true">route</span></i>
-                <b>How it works</b>
-                <p>Follow the steps from posting a job to completing and paying for it.</p>
-                <span>See how it works</span>
-            </a>
-            <a class="card feat" href="why-workonnect.php">
-                <i><span class="material-icons" aria-hidden="true">handshake</span></i>
-                <b>Why Workonnect?</b>
-                <p>See the tools that help customers and local professionals work together.</p>
-                <span>Why choose us</span>
-            </a>
-            <a class="card feat" href="verified-workers.php">
-                <i><span class="material-icons" aria-hidden="true">verified_user</span></i>
-                <b>Verified workers</b>
-                <p>Browse profiles, skills, customer ratings, and verification details.</p>
-                <span>Meet the workers</span>
-            </a>
-            <a class="card feat" href="quick-answers.php">
-                <i><span class="material-icons" aria-hidden="true">quiz</span></i>
-                <b>Quick answers</b>
-                <p>Get clear answers about accounts, bookings, payments, and support.</p>
-                <span>Read the FAQs</span>
-            </a>
-        </div>
-    </section>
-
-    <?php if ($q) { ?>
-        <section aria-labelledby="reviews-title">
-            <h2 id="reviews-title" class="rv">What customers say</h2>
-            <div class="grid rv">
-                <?php foreach ($q as $x) { ?>
-                    <div class="card quote">
-                        <?php for ($i = 0; $i < (int) $x["stars"]; $i++) { ?>
-                            <span class="material-icons mi-xs" aria-hidden="true">star</span>
-                        <?php } ?>
-                        <q><?= e($x["comment"]) ?></q>
-                        <small>– <?= e($x["name"]) ?></small>
-                    </div>
-                <?php } ?>
-            </div>
-        </section>
-    <?php } ?>
-
-    <section class="lpcta rv" aria-labelledby="cta-title">
-        <h2 id="cta-title"><?= t("Find Skilled Workers Near You") ?></h2>
-        <p><?= t(
-            "Post a job, get offers, track progress – all in one place.",
-        ) ?></p>
-        <a class="btn" href="post_job.php"><?= t("Post a Job") ?></a>
-        <a class="btn" href="register.php"><?= t("Join as Worker") ?></a>
-    </section>
-</div>
-<button id="up" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top" hidden><span class="material-icons" aria-hidden="true">arrow_upward</span></button>
-<script>// animated counters (ease-out), same data-n values as before
-document.querySelectorAll(".stat b[data-n]").forEach(function (b) {
-  var n = +b.dataset.n,
-    done = 0;
-  function run() {
-    if (done) return;
-    done = 1;
-    if (!n) {
-      b.textContent = 0;
-      return;
+// ---- shared header: reuse head(), swap its generic <nav> for the landing navigation ----
+ob_start();
+head("Home");
+$wkH = ob_get_clean();
+// Take the signed-in links (bell, role links, logout) from head()'s own nav so every existing destination and role rule is kept.
+$wkBell = ""; $wkMenu = []; $wkLogout = null; $wkHelp = false;
+if (preg_match('#<nav>(.*?)</nav>#s', $wkH, $m)) {
+    $wkIn = $m[1];
+    if (preg_match('#<span id="bell".*?</span>#s', $wkIn, $b)) { $wkBell = str_replace("🔔", $wkSvg("bell"), $b[0]); $wkIn = str_replace($b[0], "", $wkIn); }
+    if (preg_match_all('#<a\s([^>]*)>(.*?)</a>#s', $wkIn, $mm, PREG_SET_ORDER)) {
+        foreach ($mm as $a) {
+            if (!preg_match('#href="([^"]*)"#', $a[1], $h)) continue;
+            $href = $h[1];
+            if ($href === "" || $href[0] == "#" || strpos($href, "lang=") !== false) continue; // skip bell/dark toggle/language links
+            $raw = trim(strip_tags($a[2]));
+            $lab = preg_replace('/^[^\p{L}\p{N}]+/u', "", $raw);
+            $label = trim($lab === null ? $raw : $lab);
+            if ($label === "") continue;
+            $f = strtok($href, "?");
+            if ($f == "logout.php") $wkLogout = [$href, $label];
+            elseif ($f == "help.php") $wkHelp = true;
+            elseif (!in_array($f, ["index.php", "dash.php", "workers.php", "login.php", "register.php"], true)) $wkMenu[] = [$href, $label, $wkMenuIco[$f] ?? "arrow"];
+        }
     }
-    var t0 = performance.now(),
-      d = 1400;
-    (function f(t) {
-      var p = Math.min(1, (t - t0) / d),
-        e = 1 - Math.pow(1 - p, 3);
-      b.textContent = Math.round(n * e);
-      if (p < 1) requestAnimationFrame(f);
-    })(t0);
-  }
-  b._run = run;
-});
-// scroll reveal
-var io =
-  "IntersectionObserver" in window
-    ? new IntersectionObserver(
-        function (es) {
-          es.forEach(function (x) {
-            if (x.isIntersecting) {
-              x.target.classList.add("in");
-              x.target.querySelectorAll(".stat b").forEach(function (b) {
-                b._run && b._run();
-              });
-              io.unobserve(x.target);
-            }
-          });
-        },
-        { threshold: 0.15 },
-      )
-    : null;
-document.querySelectorAll(".lp .rv").forEach(function (el) {
-  io ? io.observe(el) : el.classList.add("in");
-});
-if (!io)
-  document.querySelectorAll(".stat b[data-n]").forEach(function (b) {
-    b._run();
-  });
-// card spotlight follows the pointer
-document.querySelectorAll(".lp .card").forEach(function (c) {
-  c.addEventListener("pointermove", function (e) {
-    var r = c.getBoundingClientRect();
-    c.style.setProperty("--mx", e.clientX - r.left + "px");
-    c.style.setProperty("--my", e.clientY - r.top + "px");
-  });
-});
-// back-to-top + scroll progress bar
-var up = document.getElementById("up"),
-  sp = document.getElementById("sp");
-addEventListener(
-  "scroll",
-  function () {
-    up.hidden = scrollY < 400;
-    var h = document.documentElement.scrollHeight - innerHeight;
-    sp.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
-  },
-  { passive: true },
-);
-</script>
-<?php foot();
+}
+if ($u && $wkLogout === null) $wkLogout = ["logout.php", "Logout"];
+$wkH = str_replace("</head>", '<meta name="description" content="Workonnect connects you with trusted local professionals. Post a job, get offers and track the work in one place."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="landing.css"><script>document.documentElement.classList.add("wk-js")</script></head>', $wkH);
+$wkH = preg_replace_callback("#<body\b([^>]*)>#i", function ($m) {
+    if (preg_match('/class="([^"]*)"/', $m[1])) return "<body" . preg_replace('/class="([^"]*)"/', 'class="$1 wk-page"', $m[1], 1) . ">";
+    return '<body class="wk-page"' . $m[1] . ">";
+}, $wkH, 1);
+ob_start();
+include __DIR__ . "/landing_nav.php";
+$wkNav = ob_get_clean();
+$wkH2 = preg_replace_callback("#<nav>.*?</nav>#s", function ($m) use ($wkNav) { return $wkNav; }, $wkH, 1, $wkDone);
+echo $wkDone && $wkH2 !== null ? $wkH2 : $wkH; // if the generic nav is ever not found, the page simply keeps it
+readfile(__DIR__ . "/landing_icons.svg");
+?>
+<div id="sp"></div>
+<section class="wk-hero" id="top" tabindex="-1" aria-labelledby="home-title">
+<div class="wk-hero-bg" aria-hidden="true"><i class="wk-blob wk-b1"></i><i class="wk-blob wk-b2"></i><i class="wk-dots"></i></div>
+<div class="wk-wrap wk-hero-in">
+<div class="wk-hero-copy">
+<span class="wk-pill"><i></i><span>Trusted local professionals · Karnataka</span></span>
+<h1 id="home-title"><span>Find Skilled Workers</span> <span class="wk-h1b">Near You</span></h1>
+<p class="wk-lead">Post a job, get offers, track progress – all in one place.</p>
+<form class="wk-search" action="workers.php" method="get" role="search">
+<label class="wk-f"><span class="wk-sr">Service category</span><?= $wkSvg("tools") ?><select name="cat"><option value="">All services</option><?php foreach ($CATS as $x) { ?><option><?= e($x) ?></option><?php } ?></select></label>
+<label class="wk-f"><span class="wk-sr">Search area</span><?= $wkSvg("pin") ?><input name="ar" placeholder="Your area (e.g. Sagar)" autocomplete="off"></label>
+<button type="submit" class="wk-btn wk-btn-accent"><?= $wkSvg("search") ?><span>Search</span></button>
+</form>
+<div class="wk-cta-row">
+<a class="wk-btn wk-btn-light" href="post_job.php"><span>Post a Job</span><?= $wkSvg("arrow") ?></a>
+<a class="wk-btn wk-btn-outline" href="register.php"><span>Join as Worker</span></a>
+</div>
+<ul class="wk-trust">
+<li><?= $wkSvg("shield") ?><span>ID-verified workers</span></li>
+<li><?= $wkSvg("alert") ?><span>Emergency booking</span></li>
+<li><?= $wkSvg("chat") ?><span>Live chat</span></li>
+</ul>
+</div>
+<div class="wk-hero-art" aria-hidden="true">
+<div class="wk-orb"><i class="wk-ring wk-r1"></i><i class="wk-ring wk-r2"></i><div class="wk-core"><?= $wkSvg("pin") ?></div></div>
+<?php foreach (array_slice($CATS, 0, 6) as $i => $x) { ?>
+<span class="wk-chip wk-c<?= $i ?>"><b><?= $wkSvg($wkIconOf($x)) ?></b><span><?= e($x) ?></span></span>
+<?php } ?>
+</div>
+</div>
+</section>
+
+<section class="wk-stats-wrap" aria-label="Platform statistics">
+<div class="wk-wrap">
+<ul class="wk-stats wk-reveal">
+<li class="wk-stat"><span class="wk-ic"><?= $wkSvg("users") ?></span><b class="wk-num" data-n="<?= $nW ?>"><?= $nW ?></b><span class="wk-stat-l">Workers</span></li>
+<li class="wk-stat"><span class="wk-ic"><?= $wkSvg("shield") ?></span><b class="wk-num" data-n="<?= $nV ?>"><?= $nV ?></b><span class="wk-stat-l">Verified</span></li>
+<li class="wk-stat"><span class="wk-ic"><?= $wkSvg("check") ?></span><b class="wk-num" data-n="<?= $nD ?>"><?= $nD ?></b><span class="wk-stat-l">Jobs completed</span></li>
+<li class="wk-stat"><span class="wk-ic"><?= $wkSvg("star") ?></span><b class="wk-num"><?= $wkAvg ?></b><span class="wk-stat-l">Average rating</span></li>
+</ul>
+</div>
+</section>
+
+<section class="wk-sec" id="services" aria-labelledby="services-title">
+<div class="wk-wrap">
+<div class="wk-head wk-reveal"><div><h2 id="services-title">Services</h2><p class="wk-sub">Pick a service to see the workers who offer it.</p></div><a class="wk-textlink wk-dark-link" href="workers.php"><span>Find Workers</span><?= $wkSvg("arrow") ?></a></div>
+<ul class="wk-svc-grid wk-reveal">
+<?php foreach ($CATS as $x) { ?>
+<li><a class="wk-svc" href="workers.php?cat=<?= urlencode($x) ?>"><span class="wk-svc-ic"><?= $wkSvg($wkIconOf($x)) ?></span><span class="wk-svc-n"><?= e($x) ?></span><?= $wkSvg("arrow", "wk-i wk-go") ?></a></li>
+<?php } ?>
+</ul>
+</div>
+</section>
+
+<section class="wk-sec wk-band" id="explore" aria-labelledby="explore-title">
+<div class="wk-wrap">
+<div class="wk-head wk-reveal"><div><h2 id="explore-title">Explore Workonnect</h2><p class="wk-sub">Learn how the marketplace works, what to expect, and how to get started.</p></div></div>
+<ul class="wk-feats wk-reveal">
+<li><a class="wk-feat" href="how-it-works.php"><span class="wk-ic"><?= $wkSvg("activity") ?></span><h3>How it works</h3><p>Follow the steps from posting a job to completing and paying for it.</p><span class="wk-gol"><span>See how it works</span><?= $wkSvg("arrow") ?></span></a></li>
+<li><a class="wk-feat" href="why-workonnect.php"><span class="wk-ic"><?= $wkSvg("users") ?></span><h3>Why Workonnect?</h3><p>See the tools that help customers and local professionals work together.</p><span class="wk-gol"><span>Why choose us</span><?= $wkSvg("arrow") ?></span></a></li>
+<li><a class="wk-feat" href="verified-workers.php"><span class="wk-ic"><?= $wkSvg("shield") ?></span><h3>Verified workers</h3><p>Browse profiles, skills, customer ratings, and verification details.</p><span class="wk-gol"><span>Meet the workers</span><?= $wkSvg("arrow") ?></span></a></li>
+<li><a class="wk-feat" href="quick-answers.php"><span class="wk-ic"><?= $wkSvg("chat") ?></span><h3>Quick answers</h3><p>Get clear answers about accounts, bookings, payments, and support.</p><span class="wk-gol"><span>Read the FAQs</span><?= $wkSvg("arrow") ?></span></a></li>
+</ul>
+</div>
+</section>
+
+<?php if ($q) { ?>
+<section class="wk-sec" id="reviews" aria-labelledby="reviews-title">
+<div class="wk-wrap">
+<div class="wk-head wk-reveal"><div><h2 id="reviews-title">What customers say</h2></div></div>
+<ul class="wk-voices wk-reveal">
+<?php foreach ($q as $x) { ?>
+<li class="wk-voice"><?= $wkSvg("quote", "wk-i wk-qi") ?><span class="wk-stars" role="img" aria-label="<?= (int) $x["stars"] ?> / 5"><?= $wkStars($x["stars"]) ?></span><blockquote><p><?= e($x["comment"]) ?></p></blockquote><div class="wk-by"><span class="wk-av wk-av-sm"><?= e($wkIni($x["name"])) ?></span><span><?= e($x["name"]) ?></span></div></li>
+<?php } ?>
+</ul>
+</div>
+</section>
+<?php } ?>
+
+<section class="wk-sec wk-cta-sec" aria-labelledby="cta-title">
+<div class="wk-wrap">
+<div class="wk-cta wk-reveal">
+<i class="wk-blob wk-b1" aria-hidden="true"></i><i class="wk-blob wk-b2" aria-hidden="true"></i>
+<h2 id="cta-title">Find Skilled Workers Near You</h2>
+<p>Post a job, get offers, track progress – all in one place.</p>
+<div class="wk-cta-btns">
+<a class="wk-btn wk-btn-accent" href="post_job.php"><span>Post a Job</span></a>
+<a class="wk-btn wk-btn-light" href="register.php"><span>Join as Worker</span><?= $wkSvg("arrow") ?></a>
+</div>
+</div>
+</div>
+</section>
+
+<button id="up" type="button" onclick="scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top" hidden><?= $wkSvg("up") ?></button>
+<script src="landing.js" defer></script>
+<?php
+// ---- shared footer: reuse foot() (chat widget, install prompt, notifications, dark-mode script), swap its generic <footer> for the landing footer ----
+ob_start();
+foot();
+$wkF = ob_get_clean();
+ob_start();
+include __DIR__ . "/landing_footer.php";
+$wkFoot = ob_get_clean();
+$wkF2 = preg_replace_callback("#<footer\b[^>]*>.*?</footer>#s", function ($m) use ($wkFoot) { return $wkFoot; }, $wkF, 1, $wkDone);
+echo $wkDone && $wkF2 !== null ? $wkF2 : $wkF;
