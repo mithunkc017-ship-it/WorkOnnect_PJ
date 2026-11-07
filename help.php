@@ -19,7 +19,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && trim($_POST["msg"] ?? "") !== "") {
     }
     $sent = true;
 }
+ob_start();
 head("Help");
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the Help page header.");
+}
+echo $pageHead;
 ?>
 <h2><span class="material-icons mi">help</span> Help &amp; FAQ</h2>
 <details class="card"><summary>How do I post a job?</summary>Register as a customer, click Post Job, fill the details and submit. Workers will send you offers.</details>
@@ -57,4 +70,3 @@ if ($u && $u["role"] == "admin") {
     echo "</table>";
 }
 foot();
-
