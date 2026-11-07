@@ -31,7 +31,20 @@ if ($u && $u["role"] == "customer") {
         exit();
     }
 }
+ob_start();
 head($w["name"]);
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the Worker Profile page header.");
+}
+echo $pageHead;
 ?>
 <div class="card"><h2><span class="material-icons mi">engineering</span> <?= e(
     $w["name"],
@@ -135,7 +148,7 @@ foreach ($r as $x) {
         "</b><br>" .
         e($x["comment"]) .
         ($x["reply"]
-            ? '<div style="margin:8px 0 0 14px;border-left:3px solid #ccc;padding-left:8px"><small><span class="material-icons mi">chat</span> Reply from the worker:</small><br>' .
+            ? '<div style="margin:8px 0 0 14px;border-left:3px solid #ccc;padding-left:8px"><small>Reply from the worker:</small><br>' .
                 e($x["reply"]) .
                 "</div>"
             : ($u && $u["id"] == $id
