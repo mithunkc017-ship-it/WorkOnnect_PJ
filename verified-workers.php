@@ -10,7 +10,20 @@ $workers = $pdo
          ORDER BY rating DESC, rc DESC LIMIT 12",
     )
     ->fetchAll();
+ob_start();
 head("Verified Workers");
+$pageHead = ob_get_clean();
+$pageHead = preg_replace(
+    '#<nav>.*?</nav>#s',
+    '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
+    $pageHead,
+    1,
+    $navReplaced,
+);
+if ($navReplaced !== 1) {
+    throw new RuntimeException("Could not simplify the Verified Workers page header.");
+}
+echo $pageHead;
 ?>
 <section aria-labelledby="workers-title">
     <h1 id="workers-title">Meet verified local workers</h1>
