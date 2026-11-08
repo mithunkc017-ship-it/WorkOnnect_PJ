@@ -700,7 +700,7 @@ function head($t)
     };
     echo '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' .
         e($t) .
-        ' - Workonnect</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600&family=Gaegu:wght@700&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"><link rel="stylesheet" href="style.css"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1a6b7c"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"></head><body><nav><a class="logo" href="index.php">Work<span>onnect</span></a><button class="nvb" type="button" aria-label="Menu" onclick="this.parentNode.classList.toggle(`open`)"><span class="material-icons mi">menu</span></button><div>';
+        ' - Workonnect</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600&family=Gaegu:wght@700&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"><link rel="stylesheet" href="style.css?v=' . (int) @filemtime(__DIR__ . "/style.css") . '"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1a6b7c"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"></head><body><nav><a class="logo" href="index.php">Work<span>onnect</span></a><button class="nvb" type="button" aria-label="Menu" onclick="this.parentNode.classList.toggle(`open`)"><span class="material-icons mi">menu</span></button><div>';
     if ($u) {
         global $pdo;
         $n = $pdo->prepare(
@@ -710,7 +710,7 @@ function head($t)
         $n = $n->fetchColumn();
         echo '<a href="dash.php"><span class="material-icons mi">dashboard</span>' .
             t("Dashboard") .
-            '</a><span id="bell" class="bellw"><a href="#" onclick="return tb()"><span class="material-icons mi">notifications</span><b id="bc"' .
+            '</a><span id="bell" class="bellw"><a href="#" onclick="return tb()"><span class="material-icons mi">notifications</span><span class="nl" style="display:none">Notifications</span><b id="bc"' .
             ($n ? "" : " hidden") .
             ">" .
             $n .
@@ -726,11 +726,10 @@ function head($t)
         if ($u["role"] == "admin") {
             echo '<a href="categories.php"><span class="material-icons mi">category</span>Categories</a><a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a><a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a><a href="coupons.php"><span class="material-icons mi">sell</span>Coupons</a><a href="log.php"><span class="material-icons mi">history</span>Activity</a>';
         }
+        echo '<a href="account_settings.php"><span class="material-icons mi">settings</span>Settings</a>';
         echo '<a href="logout.php"><span class="material-icons mi">logout</span>' .
             t("Logout") .
-            " (" .
-            e($u["name"]) .
-            ")</a>";
+            "</a>";
     } else {
         echo '<a href="login.php"><span class="material-icons mi">login</span>' .
             t("Login") .
@@ -743,7 +742,7 @@ function head($t)
         '</a>' .
         ($isHome
             ? ""
-            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span></a><a href="' .
+            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a><a href="' .
                 $q("kn") .
                 '"><span class="material-icons mi">translate</span>ಕನ್ನಡ</a><a href="' .
                 $q("en") .

@@ -313,3 +313,243 @@ main:has(.pd){max-width:1200px}
   .pd *{animation:none!important;transition:none!important}
   .pd-line .ln{stroke-dashoffset:0}
 }
+
+/* ============================================================
+   v26 — Sidebar menu + animated, more attractive design
+   (CSS only: no markup / PHP / workflow changes)
+   ============================================================ */
+
+/* ── Page backdrop with soft floating colour blobs ───────── */
+body:has(.pd){background:#f3f5fb}
+body.dark:has(.pd){background:#0a0f1d}
+body:has(.pd)::before,body:has(.pd)::after{
+  content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.55;pointer-events:none}
+body:has(.pd)::before{width:420px;height:420px;left:18%;top:-120px;background:#c7d2fe;animation:pdFloat 14s ease-in-out infinite}
+body:has(.pd)::after{width:380px;height:380px;right:-60px;bottom:-100px;background:#bbf7d0;animation:pdFloat 18s ease-in-out infinite reverse}
+body.dark:has(.pd)::before{background:#312e81;opacity:.45}
+body.dark:has(.pd)::after{background:#064e3b;opacity:.4}
+@keyframes pdFloat{50%{transform:translate(40px,30px) scale(1.12)}}
+
+/* ── SIDEBAR (desktop): the top menu becomes a left list ─── */
+@media (min-width:901px){
+  body:has(.pd) > nav{
+    position:fixed!important;left:0;top:0;bottom:0;right:auto;width:250px;height:100vh;
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;
+    gap:6px;padding:22px 14px 18px!important;margin:0!important;
+    background:linear-gradient(180deg,#0f172a 0%,#17213b 55%,#1e1b4b 100%)!important;
+    box-shadow:6px 0 30px rgba(15,23,42,.22);overflow-y:auto;overflow-x:hidden;z-index:60;
+    animation:pdSlideIn .55s cubic-bezier(.2,.8,.2,1) both;scrollbar-width:thin;scrollbar-color:#334155 transparent}
+  body:has(.pd) > nav .nvb{display:none!important}
+  body:has(.pd) > nav .logo{
+    display:block;font-size:24px!important;font-weight:800;color:#fff!important;padding:4px 12px 18px;
+    letter-spacing:-.4px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px}
+  body:has(.pd) > nav .logo span{color:#7dd3fc!important}
+  body:has(.pd) > nav > div{
+    display:flex!important;flex-direction:column!important;gap:3px;position:static!important;
+    background:none!important;box-shadow:none!important;padding:0!important;width:100%;height:auto!important;max-height:none!important}
+  body:has(.pd) > nav > div > a,
+  body:has(.pd) > nav #bell > a{
+    position:relative;display:flex!important;align-items:center;gap:13px;width:100%;box-sizing:border-box;
+    padding:11px 14px!important;margin:0!important;border-radius:12px;color:#cbd5e1!important;font-size:14.5px;font-weight:500;
+    text-decoration:none!important;white-space:nowrap;overflow:hidden;
+    transition:background .22s,color .22s,transform .22s,box-shadow .22s;
+    animation:pdSlideIn .5s cubic-bezier(.2,.8,.2,1) both}
+  body:has(.pd) > nav > div > a:nth-child(1){animation-delay:.05s}
+  body:has(.pd) > nav > div > a:nth-child(2){animation-delay:.09s}
+  body:has(.pd) > nav > div > a:nth-child(3){animation-delay:.13s}
+  body:has(.pd) > nav > div > a:nth-child(4){animation-delay:.17s}
+  body:has(.pd) > nav > div > a:nth-child(5){animation-delay:.21s}
+  body:has(.pd) > nav > div > a:nth-child(6){animation-delay:.25s}
+  body:has(.pd) > nav > div > a:nth-child(7){animation-delay:.29s}
+  body:has(.pd) > nav > div > a:nth-child(8){animation-delay:.33s}
+  body:has(.pd) > nav > div > a:nth-child(n+9){animation-delay:.37s}
+  body:has(.pd) > nav .material-icons{font-size:21px!important;margin:0!important;color:#94a3b8;transition:color .22s,transform .3s}
+  body:has(.pd) > nav > div > a::before{
+    content:"";position:absolute;left:0;top:50%;width:4px;height:0;border-radius:0 4px 4px 0;background:#38bdf8;
+    transform:translateY(-50%);transition:height .25s}
+  body:has(.pd) > nav > div > a:hover,
+  body:has(.pd) > nav #bell > a:hover{background:rgba(255,255,255,.08)!important;color:#fff!important;transform:translateX(5px)}
+  body:has(.pd) > nav > div > a:hover .material-icons,
+  body:has(.pd) > nav #bell > a:hover .material-icons{color:#7dd3fc;transform:scale(1.15) rotate(-6deg)}
+  body:has(.pd) > nav > div > a:hover::before{height:55%}
+  /* current page */
+  body:has(.pd) > nav > div > a.on{
+    background:linear-gradient(120deg,#2563eb,#6366f1)!important;color:#fff!important;
+    box-shadow:0 8px 20px -8px rgba(99,102,241,.8)}
+  body:has(.pd) > nav > div > a.on .material-icons{color:#fff}
+  body:has(.pd) > nav > div > a.on::before{height:0}
+  /* notification bell sits inside the list */
+  body:has(.pd) > nav .bellw{position:relative;display:block;width:100%}
+  body:has(.pd) > nav #bc{margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px}
+  body:has(.pd) > nav #np{left:calc(100% + 14px)!important;right:auto!important;top:0!important}
+  /* last items (logout) get a divider look */
+  body:has(.pd) > nav > div > a[href="logout.php"]{margin-top:10px!important;border-top:1px solid rgba(255,255,255,.08);border-radius:12px;color:#fca5a5!important}
+  body:has(.pd) > nav > div > a[href="logout.php"] .material-icons{color:#f87171}
+  body:has(.pd) > nav > div > a[href="logout.php"]:hover{background:rgba(239,68,68,.18)!important}
+
+  /* content shifts right of the sidebar */
+  body:has(.pd) > main{margin:0 0 0 250px!important;max-width:none!important;padding:28px 34px 40px!important}
+  body:has(.pd) > footer,body:has(.pd) > .ann{margin-left:250px!important}
+  .pd{max-width:1240px;margin:0 auto}
+}
+@keyframes pdSlideIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+
+/* ── Header ──────────────────────────────────────────────── */
+.pd-head{animation:pdUp .5s ease both}
+.pd-head h1{
+  background:linear-gradient(90deg,#111827,#2563eb 60%,#7c3aed);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;background-size:200% 100%;animation:pdShine 7s linear infinite}
+.dark .pd-head h1{background-image:linear-gradient(90deg,#fff,#93c5fd 60%,#c4b5fd)}
+@keyframes pdShine{to{background-position:-200% 0}}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.pd-b{position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(17,24,39,.06)}
+.pd-b::before{
+  content:"";position:absolute;top:0;left:-80%;width:55%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:left .6s}
+.pd-b:hover::before{left:140%}
+.pd-b .material-icons{font-size:18px;transition:transform .3s}
+.pd-b:hover .material-icons{transform:scale(1.2) rotate(-8deg)}
+.pd-b:active{transform:scale(.96)}
+.pd-b.blue{background:linear-gradient(120deg,#2563eb,#6366f1);box-shadow:0 8px 18px -8px rgba(37,99,235,.8)}
+.pd-b.blue:hover{background:linear-gradient(120deg,#1d4ed8,#4f46e5)}
+.pd-b.dark{background:linear-gradient(120deg,#111827,#334155);box-shadow:0 8px 18px -8px rgba(17,24,39,.8)}
+
+/* ── Cards: glass edge, pointer glow, lift ───────────────── */
+.pd-card{position:relative;border:1px solid rgba(148,163,184,.18);overflow:hidden}
+.dark .pd-card{border-color:rgba(148,163,184,.12)}
+.pd-card::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(99,102,241,.13),transparent 60%)}
+.pd-card:hover::after{opacity:1}
+.pd-card:hover{transform:translateY(-4px)}
+.pd-ct::before{content:"";width:4px;height:16px;border-radius:4px;background:linear-gradient(180deg,#2563eb,#8b5cf6)}
+.pd-g2 > *:nth-child(2){animation-delay:.1s}
+.pd-g2 > *:nth-child(1){animation-delay:.04s}
+
+/* ── KPI cards: coloured top bar + gradient icons ────────── */
+.pd-kpi{border-top:0}
+.pd-kpi:not(.hero)::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#2563eb,#8b5cf6);
+  transform:scaleX(0);transform-origin:left;animation:pdBar .9s .3s cubic-bezier(.2,.8,.2,1) forwards}
+.pd-g4 > .pd-kpi:nth-child(2)::before{background:linear-gradient(90deg,#16a34a,#22d3ee)}
+.pd-g4 > .pd-kpi:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.pd-g4 > .pd-kpi:nth-child(4)::before{background:linear-gradient(90deg,#a855f7,#ec4899)}
+@keyframes pdBar{to{transform:scaleX(1)}}
+.pd-ic{transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.pd-kpi:not(.hero) .pd-ic{background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(139,92,246,.18))}
+.pd-g4 > .pd-kpi:nth-child(2) .pd-ic{background:linear-gradient(135deg,rgba(22,163,74,.16),rgba(34,211,238,.2))}
+.pd-g4 > .pd-kpi:nth-child(3) .pd-ic{background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(239,68,68,.18))}
+.pd-g4 > .pd-kpi:nth-child(4) .pd-ic{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(236,72,153,.18))}
+.pd-kpi:hover .pd-ic{transform:scale(1.15) rotate(-8deg)}
+.pd-kv{font-variant-numeric:tabular-nums}
+
+/* hero KPI: moving gradient + floating blob */
+.pd-kpi.hero{background-size:200% 200%;animation:pdUp .45s ease both,pdGradMove 8s ease-in-out infinite;box-shadow:0 14px 34px -12px rgba(37,99,235,.65)}
+@keyframes pdGradMove{50%{background-position:100% 50%}}
+.pd-kpi.hero::after{animation:pdBlob 6s ease-in-out infinite;opacity:.85!important;background:#c7f24e;inset:auto;pointer-events:none}
+@keyframes pdBlob{50%{transform:rotate(40deg) translate(-8px,-10px) scale(1.08)}}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.pd-tabs{animation:pdUp .45s ease both}
+.pd-tabs a{position:relative}
+.pd-tabs a:hover{transform:translateY(-1px)}
+
+/* ── Charts ──────────────────────────────────────────────── */
+.pd-br .b i{background-image:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0));background-size:200% 100%;
+  animation:pdGrow 1s ease both,pdSheen 2.6s 1s linear infinite}
+@keyframes pdSheen{to{background-position:-200% 0}}
+.pd-line .dot{animation:pdFade 1.6s ease both}
+.pd-line .dot:hover{r:7}
+.pd-donut .seg{transition:transform .25s,opacity .25s;transform-origin:center;transform-box:fill-box}
+.pd-donut:hover .seg{opacity:.55}
+.pd-donut .seg:hover{opacity:1;transform:scale(1.04)}
+.pd-lg li{transition:background .2s,padding .2s}
+.pd-lg li:hover{background:rgba(99,102,241,.08);padding-left:8px;border-radius:8px}
+.pd-cols i{transition:filter .2s}
+.pd-cols i:hover{filter:brightness(1.15)}
+
+/* ── Tables ──────────────────────────────────────────────── */
+.pd-tb tr{animation:pdUp .45s ease both}
+.pd-tb tr:nth-child(2){animation-delay:.05s}.pd-tb tr:nth-child(3){animation-delay:.1s}.pd-tb tr:nth-child(4){animation-delay:.15s}
+.pd-tb tr:nth-child(5){animation-delay:.2s}.pd-tb tr:nth-child(6){animation-delay:.25s}.pd-tb tr:nth-child(7){animation-delay:.3s}
+.pd-tb tr:nth-child(n+8){animation-delay:.35s}
+.pd-tb td a{font-weight:600;color:var(--blue);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 2px no-repeat;transition:background-size .3s}
+.pd-tb td a:hover{background-size:100% 2px}
+.pd-av{box-shadow:0 3px 8px rgba(0,0,0,.18);transition:transform .25s}
+.pd-tb tr:hover .pd-av{transform:scale(1.12)}
+
+/* ── Pills & lists ───────────────────────────────────────── */
+.pd-pill{transition:transform .2s,box-shadow .2s}
+.pd-pill:hover{transform:scale(1.08)}
+.pd-pill.amber,.pd-pill.red{animation:pdPulse 2.4s ease-in-out infinite}
+@keyframes pdPulse{50%{box-shadow:0 0 0 5px rgba(245,158,11,.14)}}
+.pd-pill.red{animation-name:pdPulseRed}
+@keyframes pdPulseRed{50%{box-shadow:0 0 0 5px rgba(239,68,68,.14)}}
+.pd-list a{position:relative;overflow:hidden}
+.pd-list a::after{content:"›";font-size:20px;opacity:0;transform:translateX(-8px);transition:.25s;color:var(--mute);margin-left:auto}
+.pd-list a:hover{transform:translateX(4px)}
+.pd-list a:hover::after{opacity:1;transform:none}
+.pd-list b{transition:transform .2s}
+.pd-list a:hover b{transform:scale(1.12)}
+
+/* ── Mobile: keep the normal top menu, just soften things ── */
+@media (max-width:900px){
+  body:has(.pd)::before,body:has(.pd)::after{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  body:has(.pd)::before,body:has(.pd)::after,body:has(.pd) > nav,body:has(.pd) > nav *,.pd-head h1,.pd-kpi.hero{animation:none!important;transition:none!important}
+  .pd-kpi:not(.hero)::before{animation:none!important;transform:none}
+}
+
+/* ============================================================
+   v27 — sidebar tweaks: labelled bell, Settings, Logout at the
+   bottom, translate links hidden
+   ============================================================ */
+@media (min-width:901px){
+  /* the list fills the sidebar so Logout can sit at the very bottom */
+  body:has(.pd) > nav > div{flex:1 1 auto!important;min-height:0}
+  body:has(.pd) > nav > div > a[href="logout.php"]{
+    order:99;margin-top:auto!important;margin-bottom:0!important;
+    background:rgba(239,68,68,.12);border-top:0!important}
+
+  /* translate / language options are not shown in the sidebar */
+  body:has(.pd) > nav > div > a[href*="lang="]{display:none!important}
+
+  /* bell: icon + "Notifications" text + badge on the right */
+  /* real text labels (added in config.php as <span class="nl">) */
+  body:has(.pd) > nav .nl{display:inline!important;order:2;font-size:14.5px;font-weight:500;line-height:1.2}
+  body:has(.pd) > nav #bell > a #bc{order:3;margin-left:auto}
+  body:has(.pd) > nav #bell > a .material-icons{animation:none}
+  body:has(.pd) > nav .bellw.ring .material-icons{animation:pdRing 1.4s ease-in-out infinite;color:#fbbf24}
+  @keyframes pdRing{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(16deg)}20%{transform:rotate(-14deg)}30%{transform:rotate(10deg)}40%{transform:rotate(-8deg)}50%{transform:rotate(4deg)}}
+
+  /* dark-mode toggle only has an icon: give it a label */
+
+  /* Settings link */
+  body:has(.pd) > nav > div > a[href="account_settings.php"] .material-icons{transition:transform .6s}
+  body:has(.pd) > nav > div > a[href="account_settings.php"]:hover .material-icons{transform:rotate(180deg) scale(1.15)}
+}
+
+/* ── Settings page ───────────────────────────────────────── */
+.st-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.st-row:last-child{border-bottom:0}
+.st-row small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+.st-me{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.st-me b{font-size:18px;display:block}
+.st-me span{color:var(--mute);font-size:13.5px;word-break:break-all}
+.st-tag{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;
+  background:linear-gradient(120deg,rgba(37,99,235,.14),rgba(139,92,246,.18));color:var(--blue)}
+.st-sw{position:relative;width:48px;height:27px;flex:none;border:0;border-radius:999px;background:#cbd5e1;cursor:pointer;
+  padding:0;transition:background .3s}
+.st-sw::after{content:"";position:absolute;left:3px;top:3px;width:21px;height:21px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+.st-sw.on{background:linear-gradient(120deg,#2563eb,#7c3aed)}
+.st-sw.on::after{transform:translateX(21px)}
+.st-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);
+  background:var(--card);color:var(--text);font:500 13.5px inherit;font-family:inherit;cursor:pointer;text-decoration:none;
+  transition:transform .18s,box-shadow .18s,border-color .18s}
+.st-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.1);border-color:var(--blue);text-decoration:none}
+.st-btn.red{color:#dc2626;border-color:rgba(220,38,38,.35)}
+.st-btn.red:hover{background:rgba(220,38,38,.08);border-color:#dc2626}
+.st-btn .material-icons{font-size:18px}

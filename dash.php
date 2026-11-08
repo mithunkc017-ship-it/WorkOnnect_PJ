@@ -584,4 +584,53 @@ if ($u["role"] == "admin") {
         "</div></div>";
 }
 echo "</div>";
+// Visual-only helpers: count-up numbers, card pointer glow, highlight of the current sidebar link.
+// (no data is read or changed here)
+echo <<<'JS'
+<script>
+(function () {
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // highlight the current page in the sidebar list
+  var here = location.pathname.split("/").pop() || "dash.php";
+  document.querySelectorAll("body > nav > div > a[href]").forEach(function (a) {
+    if (a.getAttribute("href").split("?")[0] === here) a.classList.add("on");
+  });
+
+  // pointer glow on cards
+  document.querySelectorAll(".pd-card").forEach(function (c) {
+    c.addEventListener("mousemove", function (e) {
+      var r = c.getBoundingClientRect();
+      c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+      c.style.setProperty("--my", (e.clientY - r.top) + "px");
+    });
+  });
+
+  // count-up for plain numbers such as 12 or ₹4,500 (skipped when the value has icons/links inside)
+  if (reduce) return;
+  document.querySelectorAll(".pd-kv").forEach(function (el) {
+    if (el.children.length) return;
+    var m = el.textContent.trim().match(/^(\D*)([\d,]+(?:\.\d+)?)(\D*)$/);
+    if (!m) return;
+    var end = parseFloat(m[2].replace(/,/g, ""));
+    if (!isFinite(end) || end <= 0) return;
+    var dec = (m[2].split(".")[1] || "").length, comma = m[2].indexOf(",") > -1;
+    var t0 = null, dur = 900;
+    function fmt(v) {
+      var s = v.toFixed(dec);
+      if (comma) s = Number(s).toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+      return m[1] + s + m[3];
+    }
+    el.textContent = fmt(0);
+    function step(t) {
+      if (t0 === null) t0 = t;
+      var p = Math.min((t - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(end * e);
+      if (p < 1) requestAnimationFrame(step); else el.textContent = m[0].trim();
+    }
+    requestAnimationFrame(step);
+  });
+})();
+</script>
+JS;
 foot();
