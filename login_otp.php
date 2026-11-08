@@ -6,6 +6,11 @@
 //
 // Rules: 6 digits from random_int(), only a salted hash is stored (never the code), valid 5 minutes,
 // 5 wrong tries, 60 s resend cooldown, a new code deletes the old one, the code is never shown or logged.
+//
+// NEW: the e-mail also contains a "Verify automatically" button -> login_code.php?c=123456.
+// It opens the code page in the SAME browser with the code already filled and submits it.
+// Optional setting APP_URL (settings.php or .env), e.g. APP_URL=https://yoursite.com/workonnect
+// (no trailing slash). If empty, the URL is built from the current request.
 
 if (!defined("OTP_TTL")) {
     define("OTP_TTL", 300); // seconds a code stays valid (5 minutes)
@@ -62,6 +67,21 @@ function login_otp_secret()
     return strlen($s) >= 16 ? $s : "";
 }
 
+// Link used by the e-mail button: <site>/login_code.php?c=<code>
+function otp_login_link($code)
+{
+    $base = rtrim((string) wk_cfg("APP_URL"), "/");
+    if ($base === "") {
+        $https =
+            (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") ||
+            ($_SERVER["SERVER_PORT"] ?? "") == 443;
+        $host = $_SERVER["HTTP_HOST"] ?? "localhost";
+        $dir = rtrim(str_replace("\\", "/", dirname($_SERVER["SCRIPT_NAME"] ?? "/")), "/");
+        $base = ($https ? "https://" : "http://") . $host . $dir;
+    }
+    return $base . "/login_code.php?c=" . rawurlencode((string) $code);
+}
+
 // Branded HTML e-mail sent with PHPMailer + Gmail SMTP. Never writes the code to any log.
 if (!function_exists("otp_mail")) {
     function otp_mail($to, $name, $code)
@@ -84,6 +104,14 @@ if (!function_exists("otp_mail")) {
         $mins = (int) (OTP_TTL / 60);
         $n = htmlspecialchars(trim((string) $name) ?: "there", ENT_QUOTES, "UTF-8");
         $c = htmlspecialchars((string) $code, ENT_QUOTES, "UTF-8");
+        // one white box per digit (same look as Instagram / Google style code e-mails)
+        $boxes = "";
+        foreach (str_split((string) $code) as $d) {
+            $boxes .=
+                '<td align="center" width="36" height="44" style="width:36px;height:44px;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;font-size:24px;font-weight:bold;color:#0f172a;font-family:Consolas,Menlo,monospace">' .
+                htmlspecialchars($d, ENT_QUOTES, "UTF-8") .
+                '</td><td width="6" style="width:6px"></td>';
+        }
         $html =
             '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' .
             '<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">' .
@@ -91,7 +119,9 @@ if (!function_exists("otp_mail")) {
             '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">' .
             '<tr><td style="background:#1a6b7c;padding:22px 28px;color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:-.3px">Work<span style="color:#bae6fd">onnect</span></td></tr>' .
             '<tr><td style="padding:28px 28px 8px;color:#0f172a;font-size:16px;line-height:1.6">Hi ' . $n . ',<br>Use this code to finish logging in to Workonnect:</td></tr>' .
-            '<tr><td align="center" style="padding:8px 28px 8px"><div style="display:inline-block;background:#f0f9ff;border:2px dashed #1a6b7c;border-radius:12px;padding:16px 28px;font-size:34px;font-weight:bold;letter-spacing:10px;color:#0f172a;font-family:Consolas,Menlo,monospace">' . $c . '</div></td></tr>' .
+            '<tr><td style="padding:8px 28px"><div style="background:#f1f5f9;border-radius:14px;padding:16px 18px"><div style="font-size:14px;color:#0f172a;margin:0 0 12px">Code requested</div><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' . $boxes . '</tr></table></div></td></tr>' .
+            '<tr><td align="center" style="padding:14px 28px 4px"><div style="display:inline-block;background:#1a6b7c;color:#ffffff;font-weight:bold;font-size:15px;padding:12px 26px;border-radius:10px;font-family:Consolas,Menlo,monospace;letter-spacing:4px;-webkit-user-select:all;user-select:all">' . $c . '</div></td></tr>' .
+            '<tr><td style="padding:6px 28px 0;color:#64748b;font-size:12px;line-height:1.5;text-align:center">Tap and hold (or double-click) the code above to copy it, then paste it into Workonnect.</td></tr>' .
             '<tr><td style="padding:12px 28px 4px;color:#475569;font-size:14px;line-height:1.6;text-align:center">This code expires in <b>' . $mins . ' minutes</b> and can be used only once.</td></tr>' .
             '<tr><td style="padding:20px 28px 28px"><div style="background:#fef3c7;border-radius:10px;padding:14px 16px;color:#92400e;font-size:13px;line-height:1.6"><b>Security notice:</b> Workonnect will never ask you for this code by phone, chat or e-mail. If you did not try to log in, ignore this message and consider changing your password.</div></td></tr>' .
             '<tr><td style="background:#f8fafc;padding:14px 28px;color:#94a3b8;font-size:12px;text-align:center">&copy; Workonnect &middot; This is an automated message, please do not reply.</td></tr>' .
@@ -118,20 +148,22 @@ if (!function_exists("otp_mail")) {
             $m->setFrom($from, "Workonnect");
             $m->addAddress($to, (string) $name);
             $m->isHTML(true);
-            $m->Subject = "Your Workonnect Login Verification Code";
+            // code first in the subject: Gmail / phone mail apps can then offer a "Copy code" / autofill chip
+            $m->Subject = $code . " is your Workonnect login code";
             $m->Body = $html;
             $m->AltBody = $alt;
             $m->send();
             return true;
         } catch (Throwable $x) {
-         error_log(
-        "Workonnect OTP e-mail failed: " .
-        $x->getMessage() .
-        " | PHPMailer: " . $m->ErrorInfo
-    );
-    return false;
-  }
-}
+            error_log(
+                "Workonnect OTP e-mail failed: " .
+                    $x->getMessage() .
+                    " | PHPMailer: " .
+                    $m->ErrorInfo,
+            );
+            return false;
+        }
+    }
 }
 
 // Create and e-mail a new code. Returns ["ok"=>true] or ["ok"=>false,"err"=>"...", "wait"=>seconds (cooldown only)].
