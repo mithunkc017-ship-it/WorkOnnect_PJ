@@ -1,0 +1,4 @@
+# Add to your Apache .htaccess so secrets and logs can never be downloaded
+<FilesMatch "^(\.env|mail_log\.txt|composer\.(json|lock))$">
+    Require all denied
+</FilesMatch>

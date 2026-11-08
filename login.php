@@ -1,64 +1,102 @@
-<?php // Login page: checks password, limits failed attempts per IP address (5 per 5 minutes), then sends an e-mail code (see login_otp.php)
+
+<?php
 require "config.php";
+
 $err = "";
 $mailFail = false;
-$ip = $_SERVER["REMOTE_ADDR"];
+$ip = $_SERVER["REMOTE_ADDR"] ?? "";
+$u = null;
+
 $n = $pdo->prepare(
-    "SELECT COUNT(*) FROM login_attempts WHERE ip=? AND ts>DATE_SUB(NOW(),INTERVAL 5 MINUTE)",
+    "SELECT COUNT(*) FROM login_attempts WHERE ip=? AND ts>DATE_SUB(NOW(),INTERVAL 5 MINUTE)"
 );
 $n->execute([$ip]);
+
 if ($n->fetchColumn() >= 5) {
     $err = "Too many failed attempts. Try again in 5 minutes.";
-} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+} elseif ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $email = trim($_POST["email"] ?? "");
+    $password = $_POST["password"] ?? "";
+
     $s = $pdo->prepare("SELECT * FROM users WHERE email=?");
-    $s->execute([trim($_POST["email"])]);
+    $s->execute([$email]);
     $u = $s->fetch();
+
     if (
         $u &&
         $u["banned"] &&
-        password_verify($_POST["password"], $u["password"])
+        password_verify($password, $u["password"])
     ) {
         $err = "Your account is suspended. Reason: " . $u["ban_reason"];
-    } elseif ($u && password_verify($_POST["password"], $u["password"])) {
+
+    } elseif ($u && password_verify($password, $u["password"])) {
+
         if (!$u["email_verified"]) {
             send_otp($pdo, $u["email"]);
             header("Location: verify_email.php?e=" . urlencode($u["email"]));
             exit();
         }
-        // Password is correct: every role now needs an e-mail code before a login session exists.
+
+        // Localhost-only admin login without OTP
+        if (
+            ($u["role"] ?? "") === "admin" &&
+            defined("ADMIN_2FA") &&
+            ADMIN_2FA === false &&
+            in_array($ip, ["127.0.0.1", "::1"], true)
+        ) {
+            session_regenerate_id(true);
+            $_SESSION["u"] = $u;
+
+            logit("Logged in (local admin development)", $u["id"]);
+            lh($pdo, $u["id"], $u["email"], 1, "local admin login without OTP");
+
+            $pdo->prepare("DELETE FROM login_attempts WHERE ip=?")->execute([$ip]);
+
+            header("Location: dash.php");
+            exit();
+        }
+
+        // Normal login requires email OTP
         $r = login_otp_issue($pdo, $u);
+
         if ($r["ok"] || isset($r["wait"])) {
-            // (a "wait" means a code was e-mailed a moment ago - go on to the code page)
             session_regenerate_id(true);
             $_SESSION["pre2fa"] = ["id" => $u["id"], "t" => time()];
+
             if (isset($r["wait"])) {
                 $_SESSION["otp_notice"] =
                     "A code was already sent a moment ago. Please check your e-mail.";
             }
+
             lh($pdo, $u["id"], $u["email"], 1, "password ok, code pending");
             header("Location: admin_2fa.php");
             exit();
         }
+
         $err = $r["err"];
-        $mailFail = true; // e-mail / server problem: not a failed password, so no login_attempts entry
+        $mailFail = true;
         lh($pdo, $u["id"], $u["email"], 0, "code e-mail failed");
     }
+
     if (!$mailFail) {
         $pdo->prepare("INSERT INTO login_attempts(ip)VALUES(?)")->execute([$ip]);
+
         $err = $err ?: "Wrong email or password.";
+
         lh(
             $pdo,
             $u["id"] ?? null,
-            trim($_POST["email"]),
+            $email,
             0,
             $u && $u["banned"]
                 ? "suspended account"
-                : ($u
-                    ? "wrong password"
-                    : "unknown email"),
+                : ($u ? "wrong password" : "unknown email")
         );
     }
 }
+
 head("Login");
 auth_open(
     "Welcome back",

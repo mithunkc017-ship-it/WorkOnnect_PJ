@@ -1,0 +1,122 @@
+warning: in the working copy of 'login.php', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/login.php b/login.php[m
+[1mindex 0a59cd2..f2cb39d 100644[m
+[1m--- a/login.php[m
+[1m+++ b/login.php[m
+[36m@@ -1,64 +1,102 @@[m
+[31m-<?php // Login page: checks password, limits failed attempts per IP address (5 per 5 minutes), then sends an e-mail code (see login_otp.php)[m
+[32m+[m
+[32m+[m[32m<?php[m
+ require "config.php";[m
+[32m+[m
+ $err = "";[m
+ $mailFail = false;[m
+[31m-$ip = $_SERVER["REMOTE_ADDR"];[m
+[32m+[m[32m$ip = $_SERVER["REMOTE_ADDR"] ?? "";[m
+[32m+[m[32m$u = null;[m
+[32m+[m
+ $n = $pdo->prepare([m
+[31m-    "SELECT COUNT(*) FROM login_attempts WHERE ip=? AND ts>DATE_SUB(NOW(),INTERVAL 5 MINUTE)",[m
+[32m+[m[32m    "SELECT COUNT(*) FROM login_attempts WHERE ip=? AND ts>DATE_SUB(NOW(),INTERVAL 5 MINUTE)"[m
+ );[m
+ $n->execute([$ip]);[m
+[32m+[m
+ if ($n->fetchColumn() >= 5) {[m
+     $err = "Too many failed attempts. Try again in 5 minutes.";[m
+[31m-} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {[m
+[32m+[m
+[32m+[m[32m} elseif ($_SERVER["REQUEST_METHOD"] === "POST") {[m
+[32m+[m
+[32m+[m[32m    $email = trim($_POST["email"] ?? "");[m
+[32m+[m[32m    $password = $_POST["password"] ?? "";[m
+[32m+[m
+     $s = $pdo->prepare("SELECT * FROM users WHERE email=?");[m
+[31m-    $s->execute([trim($_POST["email"])]);[m
+[32m+[m[32m    $s->execute([$email]);[m
+     $u = $s->fetch();[m
+[32m+[m
+     if ([m
+         $u &&[m
+         $u["banned"] &&[m
+[31m-        password_verify($_POST["password"], $u["password"])[m
+[32m+[m[32m        password_verify($password, $u["password"])[m
+     ) {[m
+         $err = "Your account is suspended. Reason: " . $u["ban_reason"];[m
+[31m-    } elseif ($u && password_verify($_POST["password"], $u["password"])) {[m
+[32m+[m
+[32m+[m[32m    } elseif ($u && password_verify($password, $u["password"])) {[m
+[32m+[m
+         if (!$u["email_verified"]) {[m
+             send_otp($pdo, $u["email"]);[m
+             header("Location: verify_email.php?e=" . urlencode($u["email"]));[m
+             exit();[m
+         }[m
+[31m-        // Password is correct: every role now needs an e-mail code before a login session exists.[m
+[32m+[m
+[32m+[m[32m        // Localhost-only admin login without OTP[m
+[32m+[m[32m        if ([m
+[32m+[m[32m            ($u["role"] ?? "") === "admin" &&[m
+[32m+[m[32m            defined("ADMIN_2FA") &&[m
+[32m+[m[32m            ADMIN_2FA === false &&[m
+[32m+[m[32m            in_array($ip, ["127.0.0.1", "::1"], true)[m
+[32m+[m[32m        ) {[m
+[32m+[m[32m            session_regenerate_id(true);[m
+[32m+[m[32m            $_SESSION["u"] = $u;[m
+[32m+[m
+[32m+[m[32m            logit("Logged in (local admin development)", $u["id"]);[m
+[32m+[m[32m            lh($pdo, $u["id"], $u["email"], 1, "local admin login without OTP");[m
+[32m+[m
+[32m+[m[32m            $pdo->prepare("DELETE FROM login_attempts WHERE ip=?")->execute([$ip]);[m
+[32m+[m
+[32m+[m[32m            header("Location: dash.php");[m
+[32m+[m[32m            exit();[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        // Normal login requires email OTP[m
+         $r = login_otp_issue($pdo, $u);[m
+[32m+[m
+         if ($r["ok"] || isset($r["wait"])) {[m
+[31m-            // (a "wait" means a code was e-mailed a moment ago - go on to the code page)[m
+             session_regenerate_id(true);[m
+             $_SESSION["pre2fa"] = ["id" => $u["id"], "t" => time()];[m
+[32m+[m
+             if (isset($r["wait"])) {[m
+                 $_SESSION["otp_notice"] =[m
+                     "A code was already sent a moment ago. Please check your e-mail.";[m
+             }[m
+[32m+[m
+             lh($pdo, $u["id"], $u["email"], 1, "password ok, code pending");[m
+             header("Location: admin_2fa.php");[m
+             exit();[m
+         }[m
+[32m+[m
+         $err = $r["err"];[m
+[31m-        $mailFail = true; // e-mail / server problem: not a failed password, so no login_attempts entry[m
+[32m+[m[32m        $mailFail = true;[m
+         lh($pdo, $u["id"], $u["email"], 0, "code e-mail failed");[m
+     }[m
+[32m+[m
+     if (!$mailFail) {[m
+         $pdo->prepare("INSERT INTO login_attempts(ip)VALUES(?)")->execute([$ip]);[m
+[32m+[m
+         $err = $err ?: "Wrong email or password.";[m
+[32m+[m
+         lh([m
+             $pdo,[m
+             $u["id"] ?? null,[m
+[31m-            trim($_POST["email"]),[m
+[32m+[m[32m            $email,[m
+             0,[m
+             $u && $u["banned"][m
+                 ? "suspended account"[m
+[31m-                : ($u[m
+[31m-                    ? "wrong password"[m
+[31m-                    : "unknown email"),[m
+[32m+[m[32m                : ($u ? "wrong password" : "unknown email")[m
+         );[m
+     }[m
+ }[m
+[32m+[m
+ head("Login");[m
+ auth_open([m
+     "Welcome back",[m
