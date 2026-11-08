@@ -51,7 +51,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 head("Hire Worker");
 ?>
-<form class="card" method="post"><h2><span class="material-icons mi">handshake</span> Hire <?= e(
+<style>
+/* Simple hire form styling (scoped to .hw) */
+.hw{--h:#4f46e5;max-width:600px;margin:0 auto;border-radius:16px!important;box-shadow:0 8px 24px rgba(0,0,0,.08);animation:hIn .4s ease both}
+.hw>h2{margin:0 0 16px;padding-bottom:12px;border-bottom:3px solid var(--h);display:flex;align-items:center;gap:8px}
+.hw>h2 .mi{color:var(--h)}
+.hw input:not([type=hidden]),.hw textarea{width:100%;display:block;margin:0 0 10px;padding:11px 13px;border:1.5px solid #dcdfe8;border-radius:10px;
+  background:#fff;font-size:15px;transition:border-color .2s,box-shadow .2s}
+.hw input:not([type=hidden]):focus,.hw textarea:focus{outline:none;border-color:var(--h);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.hw label{display:block;margin:6px 0;font-weight:600}
+.hw .slots{padding:12px;border-radius:12px;background:#f6f7fb;margin-bottom:12px}
+.hw .slot{margin:4px 6px 0 0;padding:7px 14px;border:1.5px solid #cfd3e6;border-radius:999px;background:#fff;color:var(--h);cursor:pointer;
+  transition:background .2s,color .2s,border-color .2s}
+.hw .slot:hover:not(:disabled){border-color:var(--h);background:#eeedff}
+.hw .slot.sel{background:var(--h);color:#fff;border-color:var(--h)}
+.hw .slot:disabled{background:#eceef3;color:#a3a7b8;border-color:#eceef3;cursor:not-allowed}
+.hw>button{width:100%;margin-top:4px;padding:13px;border:0;border-radius:10px;background:var(--h);color:#fff;font-size:16px;font-weight:600;cursor:pointer;
+  transition:background .2s,transform .15s}
+.hw>button:hover{background:#4338ca;transform:translateY(-2px)}
+.hw>button:active{transform:scale(.98)}
+@keyframes hIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hw,.hw *{animation:none!important;transition:none!important}}
+</style>
+<form class="card hw" method="post"><h2><span class="material-icons mi">handshake</span> Hire <?= e(
     $wk["name"],
 ) ?> (<?= e($wk["skill"]) ?>)</h2>
 <input name="title" placeholder="Job title" required><input name="amount" placeholder="Amount of work (e.g. 3 fans)" required>

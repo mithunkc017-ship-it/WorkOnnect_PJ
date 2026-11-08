@@ -69,15 +69,46 @@ $done = (int) $pdo
     ->fetchColumn();
 head("Settlements");
 echo d_top("settlements.php");
-?><h2><span class="material-icons mi">attach_money</span> Worker Settlements</h2><p class="err"><?= e(
+?>
+<style>
+/* Simple settlements styling (scoped to .st) */
+.st{--s:#4f46e5}
+.st>h2:first-of-type{display:flex;align-items:center;gap:8px;margin:0 0 14px;padding-bottom:10px;border-bottom:3px solid var(--s);animation:sIn .4s ease both}
+.st>h2:first-of-type .mi{color:var(--s)}
+.st .grid>.card{border-radius:14px;border-left:5px solid var(--s);animation:sIn .45s ease both;transition:transform .25s,box-shadow .25s}
+.st .grid>.card:nth-child(1){border-left-color:#f59e0b;animation-delay:.05s}
+.st .grid>.card:nth-child(2){border-left-color:#12b76a;animation-delay:.12s}
+.st .grid>.card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.1)}
+.st .grid>.card h2{margin:6px 0 0}
+.st .wc{border-radius:14px;border-left:5px solid var(--s);animation:sIn .45s ease both;transition:transform .25s,box-shadow .25s}
+.st .wc:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.1)}
+.st .wc input:not([type=hidden]){flex:1;padding:10px 12px;border:1.5px solid #dcdfe8;border-radius:10px;transition:border-color .2s,box-shadow .2s}
+.st .wc input:not([type=hidden]):focus{outline:none;border-color:var(--s);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.st .btn,.st button{transition:transform .15s,box-shadow .2s,filter .2s}
+.st .btn:hover,.st button:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.18);filter:brightness(1.06)}
+.st .btn:active,.st button:active{transform:scale(.97)}
+.st .uq{margin-top:8px;padding:6px;display:inline-block;background:#fff;border:1px solid #e3e6f0;border-radius:10px}
+.st h3{margin:24px 0 10px;padding-left:10px;border-left:4px solid var(--s)}
+.st table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:12px;overflow:hidden}
+.st th{background:var(--s);color:#fff;padding:11px 12px;text-align:left}
+.st td{padding:10px 12px;border-bottom:1px solid #eef0f6;transition:background .2s}
+.st tr:hover td{background:#f4f3ff}
+.st p.err:empty{display:none}
+@keyframes sIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.st *{animation:none!important;transition:none!important}}
+</style>
+<div class="st"><h2><span class="material-icons mi">attach_money</span> Worker Settlements</h2><p class="err"><?= e(
     $msg,
 ) ?></p>
 <div class="grid"><div class="card">To pay workers<h2>₹<?= $pend ?></h2></div><div class="card">Already paid<h2>₹<?= $done ?></h2></div></div>
 <p><small>The platform collects the full amount and keeps the 10% fee. Pay each worker their share (UPI/bank), then record the reference here. Only released money (escrow confirmed, no dispute) is listed.</small></p>
 <?php
+$i = 0;
 foreach ($by as $wid => $L) {
     $sum = array_sum(array_column($L, "amt"));
-    echo '<div class="card" style="margin:10px 0"><b>' .
+    echo '<div class="card wc" style="margin:10px 0;animation-delay:' .
+        min($i * 0.07, 0.6) .
+        's"><b>' .
         e($L[0]["name"]) .
         '</b> · <span class="material-icons mi">phone</span> ' .
         e($L[0]["phone"]) .
@@ -122,6 +153,7 @@ foreach ($by as $wid => $L) {
         '"><input type="hidden" name="ids" value="' .
         implode(",", array_column($L, "id")) .
         '"><input name="ref" maxlength="40" placeholder="Payment reference (UPI ref / note)" required><button><span class="material-icons mi-xs">check_circle</span> Mark as paid</button></form></div>';
+    $i++;
 }
 if (!$by) {
     echo "<p>Nothing to pay right now.</p>";
@@ -145,4 +177,4 @@ if (!$by) {
         "</td><td>" .
         e($x["settle_ref"]) .
         "</td></tr>";
-} ?></table></div><script src="qrcode.js"></script><style>.uq svg{width:110px;height:110px}</style><script>document.querySelectorAll(".uq").forEach(function(d){var q=qrcode(0,"M");q.addData(d.dataset.u);q.make();d.innerHTML=q.createSvgTag(3,0)})</script><?php foot();
+} ?></table></div></div><script src="qrcode.js"></script><style>.uq svg{width:110px;height:110px}</style><script>document.querySelectorAll(".uq").forEach(function(d){var q=qrcode(0,"M");q.addData(d.dataset.u);q.make();d.innerHTML=q.createSvgTag(3,0)})</script><?php foot();
