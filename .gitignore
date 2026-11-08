@@ -1,0 +1,17 @@
+
+# Private configuration and credentials
+settings.php
+.env
+.env.*
+!.env.example
+
+# Dependencies
+/vendor/
+
+# Logs and temporary files
+mail_log.txt
+smtp_test.php
+smtp_config_check.php
+otp_config_compare.php
+otp_function_test.php
+mongo_schema_backup.php

@@ -481,13 +481,15 @@ function kn_translate($html)
     );
     return $o ?? $html;
 }
-function send_mail($to, $subj, $body)
+function send_mail($to, $subj, $body, $log = true)
 {
-    @file_put_contents(
-        __DIR__ . "/mail_log.txt",
-        date("c") . " TO $to | $subj | $body\n",
-        FILE_APPEND,
-    );
+    if ($log) {
+        @file_put_contents(
+            __DIR__ . "/mail_log.txt",
+            date("c") . " TO $to | $subj | $body\n",
+            FILE_APPEND,
+        );
+    }
     if (SMTP_HOST !== "") {
         return smtp_send($to, $subj, $body);
     }
@@ -558,7 +560,6 @@ function send_otp($pdo, $em)
     $pdo->prepare(
         "UPDATE users SET otp=?,otp_expires=DATE_ADD(NOW(),INTERVAL 10 MINUTE),otp_tries=0 WHERE email=?",
     )->execute([hash("sha256", $o), $em]);
-    $_SESSION["demo_otp"] = $o;
     $_SESSION["otp_t"] = time();
     send_mail(
         $em,
@@ -566,6 +567,7 @@ function send_otp($pdo, $em)
         "Your Workonnect verification code is " .
             $o .
             ". It is valid for 10 minutes.",
+        false, // never write the code to mail_log.txt
     );
 }
 function finish_payment($pdo, $u, $j, $m, $final, $disc, $code, $ref = "")
@@ -783,3 +785,4 @@ document.addEventListener("click",e=>{if(!document.getElementById("bell").contai
 window.loadN();setInterval(window.loadN,15000)}</script></body></html>';
 }
 require_once __DIR__ . "/dash_lib.php";
+require_once __DIR__ . "/login_otp.php";

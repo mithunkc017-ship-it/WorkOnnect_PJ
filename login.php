@@ -1,6 +1,7 @@
-<?php // Login page: checks password, limits failed attempts per IP address (5 per 5 minutes)
+<?php // Login page: checks password, limits failed attempts per IP address (5 per 5 minutes), then sends an e-mail code (see login_otp.php)
 require "config.php";
 $err = "";
+$mailFail = false;
 $ip = $_SERVER["REMOTE_ADDR"];
 $n = $pdo->prepare(
     "SELECT COUNT(*) FROM login_attempts WHERE ip=? AND ts>DATE_SUB(NOW(),INTERVAL 5 MINUTE)",
@@ -24,34 +25,39 @@ if ($n->fetchColumn() >= 5) {
             header("Location: verify_email.php?e=" . urlencode($u["email"]));
             exit();
         }
-        if ($u["role"] == "admin" && ADMIN_2FA) {
-            send_otp($pdo, $u["email"]);
+        // Password is correct: every role now needs an e-mail code before a login session exists.
+        $r = login_otp_issue($pdo, $u);
+        if ($r["ok"] || isset($r["wait"])) {
+            // (a "wait" means a code was e-mailed a moment ago - go on to the code page)
+            session_regenerate_id(true);
             $_SESSION["pre2fa"] = ["id" => $u["id"], "t" => time()];
-            lh($pdo, $u["id"], $u["email"], 1, "password ok, 2-step pending");
+            if (isset($r["wait"])) {
+                $_SESSION["otp_notice"] =
+                    "A code was already sent a moment ago. Please check your e-mail.";
+            }
+            lh($pdo, $u["id"], $u["email"], 1, "password ok, code pending");
             header("Location: admin_2fa.php");
             exit();
         }
-        session_regenerate_id(true);
-        $_SESSION["u"] = $u;
-        logit("Logged in", $u["id"]);
-        lh($pdo, $u["id"], $u["email"], 1, "login");
-        $pdo->prepare("DELETE FROM login_attempts WHERE ip=?")->execute([$ip]);
-        header("Location: dash.php");
-        exit();
+        $err = $r["err"];
+        $mailFail = true; // e-mail / server problem: not a failed password, so no login_attempts entry
+        lh($pdo, $u["id"], $u["email"], 0, "code e-mail failed");
     }
-    $pdo->prepare("INSERT INTO login_attempts(ip)VALUES(?)")->execute([$ip]);
-    $err = $err ?: "Wrong email or password.";
-    lh(
-        $pdo,
-        $u["id"] ?? null,
-        trim($_POST["email"]),
-        0,
-        $u && $u["banned"]
-            ? "suspended account"
-            : ($u
-                ? "wrong password"
-                : "unknown email"),
-    );
+    if (!$mailFail) {
+        $pdo->prepare("INSERT INTO login_attempts(ip)VALUES(?)")->execute([$ip]);
+        $err = $err ?: "Wrong email or password.";
+        lh(
+            $pdo,
+            $u["id"] ?? null,
+            trim($_POST["email"]),
+            0,
+            $u && $u["banned"]
+                ? "suspended account"
+                : ($u
+                    ? "wrong password"
+                    : "unknown email"),
+        );
+    }
 }
 head("Login");
 auth_open(
@@ -78,4 +84,3 @@ auth_open(
 <?php
 auth_close('New to Workonnect? <a href="register.php">Create an account</a>');
 foot();
-

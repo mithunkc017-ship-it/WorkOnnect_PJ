@@ -207,6 +207,18 @@ return [
             "ts" => ["dt", "@now"],
         ],
     ],
+        "login_otps" => [
+        "pk" => "user_id",
+        "ai" => null,
+        "unique" => [["user_id"]],
+        "cols" => [
+            "user_id" => ["int", null],
+            "otp_hash" => ["str", null],
+            "expires_at" => ["dt", null],
+            "created_at" => ["dt", null],
+            "tries" => ["int", 0],
+        ],
+    ],
     "portfolio" => [
         "pk" => "id",
         "ai" => "id",
