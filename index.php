@@ -189,6 +189,7 @@ readfile(__DIR__ . "/landing_icons.svg");
                     <?= $wkSvg("search") ?><span>Search</span>
                 </button>
             </form>
+            <!-- Temporarily hidden; keep these calls to action for later reuse.
             <div class="wk-cta-row">
                 <a class="wk-btn wk-btn-light" href="post_job.php">
                     <span>Post a Job</span><?= $wkSvg("arrow") ?>
@@ -197,6 +198,7 @@ readfile(__DIR__ . "/landing_icons.svg");
                     <span>Join as Worker</span>
                 </a>
             </div>
+            -->
             <ul class="wk-trust">
                 <li><?= $wkSvg("shield") ?><span>ID-verified workers</span></li>
                 <li><?= $wkSvg("alert") ?><span>Emergency booking</span></li>
