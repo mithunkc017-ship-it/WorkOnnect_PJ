@@ -3,7 +3,7 @@
 <div class="wk-fgrid">
 <div class="wk-fbrand">
 <a class="wk-brand" href="index.php"><img src="icons/icon-192.png" width="36" height="36" alt=""><span class="wk-brand-t">Work<b>onnect</b></span></a>
-<p>Connecting people with trusted local professionals. Find skilled workers, post jobs, and manage your service requests with ease.</p>
+<p style="color:aquamarine;">Connecting people with trusted local professionals. Find skilled workers, post jobs, and manage your service requests with ease.</p>
 <span class="wk-fpill"><?= $wkSvg("shield") ?><span>Connecting communities</span></span>
 </div>
 <div class="wk-fcol">
@@ -35,9 +35,9 @@
 </div>
 </div>
 <div class="wk-fbottom">
-<p>© <?= date("Y") ?> Workonnect. All rights reserved.</p>
+<p style="color:aquamarine;">© <?= date("Y") ?> Workonnect. All rights reserved.</p>
 <p class="wk-flegal"><a href="#" id="inst" hidden>📲 Install app</a></p>
-<a class="wk-totop" href="#top"><span>Back to top</span><?= $wkSvg("up") ?></a>
+<!-- <a class="wk-totop" href="#top"><span>Back to top</span><?= $wkSvg("up") ?></a> -->
 </div>
 </div>
 </footer>

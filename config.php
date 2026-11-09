@@ -724,7 +724,8 @@ function head($t)
             echo '<a href="open_jobs.php"><span class="material-icons mi">lock_open</span> Open Jobs</a><a href="profile.php"><span class="material-icons mi">person</span>My Profile</a><a href="earnings.php"><span class="material-icons mi">payments</span> Earnings</a><a href="portfolio.php"><span class="material-icons mi">photo_library</span> My Work</a><a href="verify.php"><span class="material-icons mi">verified</span> Get Verified</a>';
         }
         if ($u["role"] == "admin") {
-            echo '<a href="categories.php"><span class="material-icons mi">category</span>Categories</a><a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a><a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a><a href="coupons.php"><span class="material-icons mi">sell</span>Coupons</a><a href="log.php"><span class="material-icons mi">history</span>Activity</a>';
+            // echo '<a href="categories.php"><span class="material-icons mi">category</span>Categories</a><a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a><a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a><a href="coupons.php"><span class="material-icons mi">sell</span>Coupons</a><a href="log.php"><span class="material-icons mi">history</span>Activity</a>';
+            echo '<a href="dash.php" id="admBtn" onclick="return window.admTog ? admTog() : true"><span class="material-icons mi">apps</span>Admin Tools</a>';
         }
         echo '<a href="account_settings.php"><span class="material-icons mi">settings</span>Settings</a>';
         echo '<a href="logout.php"><span class="material-icons mi">logout</span>' .
@@ -749,12 +750,12 @@ function head($t)
                 '">EN</a>') .
         "</div></nav>" .
         announceBar() .
-        "<main>";
+        "<main>" . adm_side_open();
 }
 function foot()
 {
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
-    echo '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
+        echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
     if (!$isHome) {
         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
 <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
@@ -785,3 +786,4 @@ window.loadN();setInterval(window.loadN,15000)}</script></body></html>';
 }
 require_once __DIR__ . "/dash_lib.php";
 require_once __DIR__ . "/login_otp.php";
+require_once __DIR__ . "/admin_sidebar.php";
