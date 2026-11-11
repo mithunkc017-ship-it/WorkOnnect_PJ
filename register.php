@@ -91,9 +91,9 @@ auth_open(
     '<span class="material-icons mi">badge</span>',
     '<select name="role" id="role"><option value="customer"' .
         ($role == "customer" ? " selected" : "") .
-        '>I need work done (Customer)</option><option value="worker"' .
+        '>Customer</option><option value="worker"' .
         ($role == "worker" ? " selected" : "") .
-        ">I am a worker</option></select>",
+        ">Worker</option></select>",
 ) ?>
 <div id="skillbox"<?= $role == "worker" ? "" : " hidden" ?>><?php
 $o = '<option value="">Skill (workers only)</option>';

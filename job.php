@@ -275,10 +275,94 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 head($j["title"]);
 $st = ["open", "assigned", "in_progress", "completed"];
 $at = array_search($j["status"], $st);
+$isCustomer = $j["customer_id"] == $u["id"];
+$isWorker = $j["worker_id"] == $u["id"];
 ?>
-<div class="card"><h2><?= e($j["title"]) ?> <?= $j["urgent"]
-     ? '<span class="err"><span class="material-icons mi">emergency</span> EMERGENCY</span>'
-     : "" ?></h2>
+<style>
+.jp{--jp-ink:#1b2430;--jp-mute:#667085;--jp-line:#e4e7ec;--jp-soft:#f6f8fa;--jp-accent:#0f766e;--jp-accent-soft:#e6f4f2;--jp-danger:#c62828;--jp-ok:#1a7f4b;max-width:860px;margin:0 auto;color:var(--jp-ink)}
+.jp *{box-sizing:border-box}
+.jp .jp-card{background:#fff;border:1px solid var(--jp-line);border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.jp .jp-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:18px}
+.jp .jp-head h2{margin:0;font-size:1.5rem;line-height:1.25;letter-spacing:-.01em}
+.jp .jp-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600;background:#fdecea;color:var(--jp-danger)}
+.jp .jp-badge .mi{font-size:16px}
+.jp .jp-badge.err{color:var(--jp-danger)}
+.jp .steps{display:flex;gap:6px;margin:0 0 20px;padding:0}
+.jp .steps div{flex:1;text-align:center;padding:9px 4px;font-size:.82rem;font-weight:500;color:var(--jp-mute);background:var(--jp-soft);border-radius:8px;border-bottom:3px solid var(--jp-line)}
+.jp .steps div.on{color:var(--jp-accent);background:var(--jp-accent-soft);border-bottom-color:var(--jp-accent);font-weight:600}
+.jp .jp-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.jp .jp-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;background:var(--jp-soft);border:1px solid var(--jp-line);font-size:.88rem}
+.jp .jp-chip .mi{font-size:17px;color:var(--jp-accent)}
+.jp .jp-details{line-height:1.65;margin:0 0 18px;max-width:70ch}
+.jp .jp-map{border-radius:12px;overflow:hidden;border:1px solid var(--jp-line);margin-bottom:8px}
+.jp .jp-map iframe{display:block;width:100%;height:220px;border:0}
+.jp a{color:var(--jp-accent)}
+.jp .jp-maplink{display:inline-flex;align-items:center;gap:4px;font-size:.9rem;margin-bottom:14px;text-decoration:none;font-weight:500}
+.jp img.p{max-width:100%;border-radius:12px;display:block;margin:8px 0 14px}
+.jp .jp-posted{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 14px;background:var(--jp-soft);border-radius:10px;margin:0 0 18px;font-size:.92rem}
+.jp .jp-posted .mi{font-size:18px;vertical-align:middle;color:var(--jp-accent)}
+.jp .jp-section{border-top:1px solid var(--jp-line);padding-top:18px;margin-top:18px}
+.jp .jp-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.jp .jp-actions form{margin:0}
+.jp .jp-note{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:var(--jp-accent-soft);margin:12px 0;font-size:.92rem}
+.jp .jp-note .mi{font-size:18px;color:var(--jp-accent)}
+.jp .jp-note.err{background:#fdecea;color:var(--jp-danger)}
+.jp .jp-price{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 16px;border:1px solid var(--jp-line);border-radius:12px;margin:14px 0}
+.jp .jp-price b{font-size:1.25rem}
+.jp .jp-price .ok{color:var(--jp-ok);font-weight:600}
+.jp .jp-inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.jp h3{margin:0 0 12px;font-size:1.05rem;display:flex;align-items:center;gap:6px}
+.jp h3 .mi{color:var(--jp-accent)}
+.jp input:not([type=hidden]):not([type=file]),.jp select,.jp textarea{padding:10px 12px;border:1px solid #cfd4dc;border-radius:8px;font:inherit;background:#fff;min-width:0}
+.jp input:focus,.jp select:focus,.jp textarea:focus{outline:2px solid var(--jp-accent);outline-offset:1px;border-color:var(--jp-accent)}
+.jp textarea{width:100%;resize:vertical;margin-bottom:10px}
+.jp button,.jp .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:0;border-radius:8px;background:var(--jp-accent);color:#fff;font:inherit;font-weight:600;font-size:.92rem;cursor:pointer;text-decoration:none;transition:background .15s}
+.jp button:hover,.jp .btn:hover{background:#0b5f58}
+.jp button:focus-visible,.jp .btn:focus-visible{outline:2px solid var(--jp-ink);outline-offset:2px}
+.jp button[style*="#c00"]{background:var(--jp-danger)!important}
+.jp button[style*="#c00"]:hover{background:#a11f1f!important}
+.jp .mi,.jp .mi-xs{vertical-align:middle}
+.jp .jp-rate{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.jp .jp-rate input{flex:1;min-width:180px}
+.jp .jp-stars{color:#f5a623}
+.jp .jp-offer{display:grid;gap:10px}
+.jp .jp-offer input{width:100%}
+.jp #chat{max-height:300px;overflow:auto;background:var(--jp-soft);border:1px solid var(--jp-line);border-radius:12px;padding:12px 14px}
+.jp #chat p{margin:0 0 8px;padding:8px 12px;background:#fff;border:1px solid var(--jp-line);border-radius:10px;line-height:1.45;word-break:break-word}
+.jp #chat p small{display:block;color:var(--jp-mute);font-size:.74rem;margin-top:2px}
+.jp #chat img.p{margin:6px 0 2px}
+.jp .jp-chatform{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.jp .jp-chatform input[name=m]{flex:1;min-width:180px}
+.jp .jp-chatform input[type=file]{width:auto;max-width:100%;font-size:.85rem;align-self:center}
+.jp details.card,.jp details.jp-card{padding:16px 20px}
+.jp details summary{cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--jp-danger)}
+.jp details form{margin-top:12px}
+@media(max-width:560px){.jp .jp-card{padding:16px;border-radius:12px}.jp .steps div{font-size:.72rem;padding:8px 2px}.jp .jp-head h2{font-size:1.25rem}}
+/* hide the top menu on this page, show only a back arrow */
+body>header,body>nav,header,nav,.nav,.navbar,.topbar,.top,.menu,.menubar,#nav,#menu,#header{display:none!important}
+.jp-back{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:12px;z-index:50;width:42px;height:42px;padding:0;border-radius:50%;background:#fff;color:#1b2430;border:1px solid #e4e7ec;box-shadow:0 2px 8px rgba(16,24,40,.12);display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.jp-back:hover{background:#e6f4f2;color:#0f766e}
+.jp-back .material-icons{font-size:24px}
+.jp{padding-top:56px}
+/* compact chat send row */
+.jp .jp-chatform{align-items:center;flex-wrap:nowrap;gap:8px}
+.jp .jp-chatform input[name=m]{height:42px;flex:1 1 auto}
+.jp .jp-chatform input[type=file]{flex:0 1 110px;width:110px;max-width:110px;font-size:.75rem}
+.jp .jp-chatform button{height:42px;padding:0 20px;flex:0 0 auto;justify-content:center}
+/* compact report box */
+.jp details.jp-report{max-width:380px;margin:0 0 18px;padding:10px 14px;border:1px solid var(--jp-line);border-radius:10px;background:#fff}
+.jp details.jp-report summary{font-size:.88rem}
+.jp details.jp-report form{margin-top:10px}
+.jp details.jp-report textarea{height:60px;min-height:60px;padding:8px 10px;font-size:.88rem;margin-bottom:8px}
+.jp details.jp-report button{padding:7px 14px;font-size:.85rem}
+@media(max-width:560px){.jp .jp-chatform{flex-wrap:wrap}.jp .jp-chatform input[name=m]{flex:1 1 100%}.jp .jp-chatform input[type=file]{flex:1 1 auto;width:auto;max-width:none}.jp details.jp-report{max-width:100%}}
+</style>
+<div class="jp">
+<a class="jp-back" href="javascript:history.back()" aria-label="Go back" title="Back"><span class="material-icons">arrow_back</span></a>
+<div class="jp-card card">
+<div class="jp-head"><h2><?= e($j["title"]) ?></h2><?= $j["urgent"]
+    ? '<span class="jp-badge err"><span class="material-icons mi">emergency</span> EMERGENCY</span>'
+    : "" ?></div>
 <div class="steps"><?php foreach ($st as $i => $s) {
     echo '<div class="' .
         ($i <= $at ? "on" : "") .
@@ -286,40 +370,42 @@ $at = array_search($j["status"], $st);
         ucfirst(str_replace("_", " ", $s)) .
         "</div>";
 } ?></div>
-<p><b><?= e(
-    $j["category"],
-) ?></b> · <span class="material-icons mi">place</span> <?= e(
+<div class="jp-meta">
+<span class="jp-chip"><b><?= e($j["category"]) ?></b></span>
+<span class="jp-chip"><span class="material-icons mi">place</span> <?= e($j["location"]) ?></span>
+<span class="jp-chip">Work: <?= e($j["amount"]) ?></span>
+</div>
+<p class="jp-details"><?= nl2br(e($j["details"])) ?></p>
+<div class="jp-map"><iframe title="map" width="100%" height="220" loading="lazy" src="https://www.google.com/maps?q=<?= urlencode(
     $j["location"],
-) ?> · Work: <?= e($j["amount"]) ?></p>
-<p><?= nl2br(e($j["details"])) ?></p>
-<iframe title="map" width="100%" height="220" style="border:0;border-radius:8px" loading="lazy" src="https://www.google.com/maps?q=<?= urlencode(
+) ?>&output=embed"></iframe></div>
+<a class="jp-maplink" href="https://www.google.com/maps/search/?api=1&query=<?= urlencode(
     $j["location"],
-) ?>&output=embed"></iframe>
-<p><a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode(
-    $j["location"],
-) ?>" target="_blank"><span class="material-icons mi">place</span> Open in Google Maps</a></p>
+) ?>" target="_blank"><span class="material-icons mi">place</span> Open in Google Maps</a>
 <?php if ($j["photo"]) {
     echo '<img class="p" src="' . e($j["photo"]) . '">';
 } ?>
-<p>Posted by <?= e($j["cname"]) ?>
+<div class="jp-posted"><span>Posted by <b><?= e($j["cname"]) ?></b></span>
 <?php if (
     $j["customer_id"] == $u["id"] ||
     ($j["worker_id"] == $u["id"] && $j["status"] != "requested") ||
     $u["role"] == "admin"
 ) {
-    echo ' · <span class="material-icons mi">phone</span> <a href="tel:' .
+    echo '<span><span class="material-icons mi">phone</span> <a href="tel:' .
         e($j["phone"]) .
         '">' .
         e($j["phone"]) .
-        "</a>";
+        "</a></span>";
 } else {
-    echo ' · <span class="material-icons mi">phone</span> <small>shown after the job is assigned to you</small>';
-} ?></p>
+    echo '<span><span class="material-icons mi">phone</span> <small>shown after the job is assigned to you</small></span>';
+} ?></div>
+
+<div class="jp-actions">
 <?php
 if ($j["customer_id"] == $u["id"] && $j["status"] == "open") {
     echo '<a class="btn" href="edit_job.php?id=' .
         $id .
-        '"><span class="material-icons mi-xs">edit</span>️ Edit</a> ';
+        '"><span class="material-icons mi-xs">edit</span> Edit</a> ';
 }
 if (
     $j["customer_id"] == $u["id"] &&
@@ -331,26 +417,29 @@ if (
             : "") .
         '\')"><input type="hidden" name="a" value="cancel"><button style="background:#c00">Cancel Job</button></form>';
 }
+?>
+</div>
+<?php
 if ($j["status"] == "cancelled") {
-    echo '<p class="err"><b>This job was cancelled.</b></p>';
+    echo '<p class="jp-note err err"><b>This job was cancelled.</b></p>';
 }
 ?>
 <?php
 if ($j["status"] == "requested" && $j["worker_id"] == $u["id"]) {
-    echo '<form method="post"><input type="hidden" name="a" value="respond"><button name="r" value="accept"><span class="material-icons mi-xs">check_circle</span> Accept Request</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';
+    echo '<form method="post" class="jp-actions"><input type="hidden" name="a" value="respond"><button name="r" value="accept"><span class="material-icons mi-xs">check_circle</span> Accept Request</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';
 }
 if ($j["status"] == "requested" && $j["customer_id"] == $u["id"]) {
-    echo '<p><span class="material-icons mi-xs">hourglass_empty</span> Waiting for the worker to accept your request.</p>';
+    echo '<p class="jp-note"><span class="material-icons mi-xs">hourglass_empty</span> Waiting for the worker to accept your request.</p>';
 }
 if (
     $j["customer_id"] == $u["id"] &&
     $j["status"] == "completed" &&
     !$j["confirmed"]
 ) {
-    echo '<form method="post"><input type="hidden" name="a" value="confirm"><button><span class="material-icons mi-xs">verified</span> Confirm the work is done</button></form>';
+    echo '<form method="post" class="jp-actions"><input type="hidden" name="a" value="confirm"><button><span class="material-icons mi-xs">verified</span> Confirm the work is done</button></form>';
 }
 if ($j["slot"]) {
-    echo '<p><span class="material-icons mi">calendar_today</span> Preferred time: <b>' .
+    echo '<p class="jp-note"><span class="material-icons mi">calendar_today</span> Preferred time: <b>' .
         e($j["slot"]) .
         "</b></p>";
 }
@@ -361,13 +450,13 @@ if (
     in_array($u["id"], [$j["customer_id"], $j["worker_id"]])
 ) {
     if ($j["reschedule_by"] && $j["reschedule_by"] != $u["id"]) {
-        echo '<p><span class="material-icons mi-xs">refresh</span> New time requested: <b>' .
+        echo '<p class="jp-note"><span class="material-icons mi-xs">refresh</span> New time requested: <b>' .
             e($j["reschedule_slot"]) .
-            '</b></p><form method="post"><input type="hidden" name="a" value="rr"><button name="r" value="accept">Accept</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';
+            '</b></p><form method="post" class="jp-actions"><input type="hidden" name="a" value="rr"><button name="r" value="accept">Accept</button> <button name="r" value="decline" style="background:#c00">Decline</button></form>';
     } elseif ($j["reschedule_by"]) {
-        echo '<p><span class="material-icons mi-xs">refresh</span> Waiting for the other person to answer your time change request.</p>';
+        echo '<p class="jp-note"><span class="material-icons mi-xs">refresh</span> Waiting for the other person to answer your time change request.</p>';
     } else {
-        echo '<form method="post" style="display:flex;gap:8px"><input type="hidden" name="a" value="resched"><input type="datetime-local" name="slot" required><button>Request new time</button></form>';
+        echo '<form method="post" class="jp-inline"><input type="hidden" name="a" value="resched"><input type="datetime-local" name="slot" required><button>Request new time</button></form>';
     }
 }
 if (
@@ -376,7 +465,7 @@ if (
     !$j["tip"] &&
     !$j["refunded"]
 ) {
-    echo '<form method="post" style="display:flex;gap:8px"><input type="hidden" name="a" value="tip"><input type="number" name="tip" min="1" max="5000" placeholder="Tip ₹" required><button><span class="material-icons mi">volunteer_activism</span> Add tip</button></form>';
+    echo '<form method="post" class="jp-inline"><input type="hidden" name="a" value="tip"><input type="number" name="tip" min="1" max="5000" placeholder="Tip ₹" required><button><span class="material-icons mi">volunteer_activism</span> Add tip</button></form>';
 }
 if (
     $j["customer_id"] == $u["id"] &&
@@ -390,22 +479,23 @@ if (
 <?php include "job_extras.php"; ?>
 <?php
 if ($j["price"]) {
-    echo "<p>Agreed price: <b>₹" .
+    echo '<div class="jp-price"><span>Agreed price: <b>₹' .
         $j["price"] .
-        "</b> · " .
+        "</b></span>" .
         ($j["paid"]
             ? '<span class="ok">Paid via ' .
                 e($j["pay_method"]) .
                 '</span> <a class="btn" href="invoice.php?id=' .
                 $id .
                 '"><span class="material-icons mi">receipt</span> Invoice</a>'
-            : "Unpaid") .
+            : "<span>Unpaid</span>") .
         ($j["tip"]
-            ? ' · <span class="material-icons mi-xs">volunteer_activism</span> Tip ₹' .
-                $j["tip"]
+            ? '<span><span class="material-icons mi-xs">volunteer_activism</span> Tip ₹' .
+                $j["tip"] .
+                "</span>"
             : "") .
-        ($j["refunded"] ? ' · <b class="err">Refunded</b>' : "") .
-        "</p>";
+        ($j["refunded"] ? '<b class="err">Refunded</b>' : "") .
+        "</div>";
 }
 if (
     $j["customer_id"] == $u["id"] &&
@@ -421,12 +511,12 @@ if (
     $rv->execute([$id]);
     $rv = $rv->fetchColumn();
     echo $rv
-        ? "<p>Your rating: " .
+        ? '<p class="jp-stars">Your rating: ' .
             str_repeat('<span class="material-icons mi-xs">star</span>', $rv) .
             "</p>"
-        : '<form method="post" action="review.php?id=' .
+        : '<form method="post" class="jp-section" action="review.php?id=' .
             $id .
-            '"><h3>Rate the worker</h3><select name="stars"><option value="5">5 – Excellent</option><option value="4">4 – Good</option><option value="3">3 – Okay</option><option value="2">2 – Poor</option><option value="1">1 – Bad</option></select><input name="comment" placeholder="Write a short review"><button>Submit Review</button></form>';
+            '"><h3>Rate the worker</h3><div class="jp-rate"><select name="stars"><option value="5">5 – Excellent</option><option value="4">4 – Good</option><option value="3">3 – Okay</option><option value="2">2 – Poor</option><option value="1">1 – Bad</option></select><input name="comment" placeholder="Write a short review"><button>Submit Review</button></div></form>';
 } ?>
 <?php if ($j["wname"]) {
     echo '<p>Assigned to: <b><a href="worker.php?id=' .
@@ -440,7 +530,7 @@ if (
     $j["worker_id"] == $u["id"] &&
     in_array($j["status"], ["assigned", "in_progress"])
 ) { ?>
-<form method="post"><input type="hidden" name="a" value="progress"><input type="hidden" name="s" value="<?= $j[
+<form method="post" class="jp-actions"><input type="hidden" name="a" value="progress"><input type="hidden" name="s" value="<?= $j[
     "status"
 ] == "assigned"
     ? "in_progress"
@@ -449,8 +539,8 @@ if (
     ? "Start Work"
     : "Mark Completed" ?></button></form><?php } ?>
 <?php if ($u["role"] == "worker" && $j["status"] == "open") { ?>
-<form method="post"><h3>Send Offer</h3><input type="hidden" name="a" value="offer"><input type="number" name="price" placeholder="Your price (₹)" required>
-<input name="msg" placeholder="Short message" required><button>Send Offer</button></form><?php } ?></div>
+<form method="post" class="jp-section"><h3>Send Offer</h3><div class="jp-offer"><input type="hidden" name="a" value="offer"><input type="number" name="price" placeholder="Your price (₹)" required>
+<input name="msg" placeholder="Short message" required><div><button>Send Offer</button></div></div></form><?php } ?></div>
 <?php if (
     ($j["customer_id"] == $u["id"] || $j["worker_id"] == $u["id"]) &&
     $j["worker_id"]
@@ -461,7 +551,7 @@ if (
     );
     $ms->execute([$id]);
     ?>
-<h3><span class="material-icons mi">chat</span> Job Chat</h3><div class="card" id="chat" style="max-height:260px;overflow:auto"><?php foreach (
+<div class="jp-card card"><h3><span class="material-icons mi">chat</span> Job Chat</h3><div id="chat"><?php foreach (
     $ms
     as $m
 ) {
@@ -478,17 +568,20 @@ if (
         $m["created"] .
         "</small></p>";
 } ?></div>
-<form method="post" enctype="multipart/form-data" style="display:flex;gap:8px;margin-top:8px"><input type="hidden" name="a" value="msg"><input name="m" placeholder="Type a message"><input type="file" name="photo" accept="image/*" style="width:auto"><button>Send</button></form>
+<form method="post" enctype="multipart/form-data" class="jp-chatform"><input type="hidden" name="a" value="msg"><input name="m" placeholder="Type a message"><input type="file" name="photo" accept="image/*"><button>Send</button></form></div>
 <script>chat.scrollTop=1e9;setInterval(async()=>{let r=await fetch("msgs.php?id=<?= $id ?>");chat.innerHTML=await r.text();chat.scrollTop=1e9},4000)</script><?php
 } ?>
 <?php
 if ($j["customer_id"] == $u["id"] || $u["role"] == "admin") {
-    echo "<h3>Offers</h3>";
+    echo '<div class="jp-card card"><h3>Offers</h3>';
     include "offer_compare.php";
+    echo "</div>";
 }
 if (
     ($j["customer_id"] == $u["id"] || $j["worker_id"] == $u["id"]) &&
     $j["worker_id"]
-) { ?><details class="card" style="margin-top:12px"><summary><span class="material-icons mi">flag</span> Report a problem</summary><form method="post" action="report.php?id=<?= $id ?>"><textarea name="msg" rows="2" required placeholder="Describe the problem"></textarea><button>Send Report</button></form></details><?php }
+) { ?><details class="jp-report"><summary><span class="material-icons mi">flag</span> Report a problem</summary><form method="post" action="report.php?id=<?= $id ?>"><textarea name="msg" rows="2" required placeholder="Describe the problem"></textarea><button>Send Report</button></form></details><?php }
+?>
+</div>
+<?php
 foot();
-
