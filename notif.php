@@ -23,7 +23,16 @@ $n = $pdo->prepare(
     "SELECT COUNT(*) FROM notifications WHERE user_id=? AND seen=0",
 );
 $n->execute([$u["id"]]);
-echo json_encode([
-    "unread" => (int) $n->fetchColumn(),
-    "items" => $s->fetchAll(),
-]);
+$items = $s->fetchAll();
+foreach ($items as &$it) {
+    $p = notif_parts($it["msg"]);
+    $it["icon"] = $p["icon"];
+    $it["text"] = $p["text"];
+    $it["ago"] = time_ago($it["created"]);
+    $it["link"] = $it["link"] ?: "notifications.php";
+}
+unset($it);
+echo json_encode(
+    ["unread" => (int) $n->fetchColumn(), "items" => $items],
+    JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE,
+);

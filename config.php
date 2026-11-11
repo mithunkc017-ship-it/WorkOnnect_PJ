@@ -752,10 +752,44 @@ function head($t)
         announceBar() .
         "<main>" . adm_side_open();
 }
+
+
+// function foot()
+// {
+//     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
+//         echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
+//     if (!$isHome) {
+//         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
+// <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
+//     }
+//     echo '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});';
+//     if (!$isHome) {
+//         echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
+//     }
+//     if (!$isHome) {
+//         echo "if(localStorage.d)document.body.classList.add('dark');";
+//     }
+//     echo '
+// function tb(){if(window.Notification&&Notification.permission=="default")Notification.requestPermission();var p=document.getElementById("np");p.hidden=!p.hidden;if(!p.hidden&&window.loadN)window.loadN();return false}
+// if(document.getElementById("bell")){const CS="' .
+//         $_SESSION["csrf"] .
+//         '";let LAST=+document.getElementById("bc").textContent;
+// function toast(i){if(window.Notification&&Notification.permission=="granted"&&document.hidden)new Notification("Workonnect",{body:i.msg,icon:"icons/icon-192.png"});let t=document.createElement("a");t.className="toast";t.href=i.link;t.textContent="<span class="material-icons mi">notifications</span> "+i.msg;document.body.appendChild(t);setTimeout(()=>t.remove(),6000)}
+// window.loadN=function(){fetch("notif.php").then(r=>r.json()).then(d=>{let c=document.getElementById("bc"),b=document.getElementById("bell"),p=document.getElementById("np");
+// c.textContent=d.unread;c.hidden=!d.unread;b.classList.toggle("ring",d.unread>0);p.innerHTML="";
+// let h=document.createElement("div");h.className="nh";h.innerHTML="<b>\'.t(\'Notifications\').\'</b>";let m=document.createElement("a");m.href="#";m.textContent="\'.t(\'Mark all read\').\'";
+// m.onclick=function(){fetch("notif.php",{method:"POST",body:new URLSearchParams({csrf:CS})}).then(window.loadN);return false};h.appendChild(m);p.appendChild(h);
+// if(!d.items.length){let e=document.createElement("div");e.className="ni";e.textContent="\'.t(\'No notifications yet\').\'";p.appendChild(e)}
+// d.items.forEach(i=>{let a=document.createElement("a");a.className="ni"+(i.seen==1?"":" new");a.href=i.link;a.textContent=i.msg;p.appendChild(a)});
+// let v=document.createElement("a");v.className="nv";v.href="notifications.php";v.textContent="\'.t(\'View all notifications\').\'";p.appendChild(v);
+// if(d.unread>LAST&&d.items[0])toast(d.items[0]);LAST=d.unread})};
+// document.addEventListener("click",e=>{if(!document.getElementById("bell").contains(e.target))document.getElementById("np").hidden=true});
+// window.loadN();setInterval(window.loadN,15000)}</script></body></html>';
+// }
 function foot()
 {
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
-        echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
+    echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
     if (!$isHome) {
         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
 <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
@@ -763,27 +797,14 @@ function foot()
     echo '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});';
     if (!$isHome) {
         echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
-    }
-    if (!$isHome) {
         echo "if(localStorage.d)document.body.classList.add('dark');";
     }
-    echo '
-function tb(){if(window.Notification&&Notification.permission=="default")Notification.requestPermission();var p=document.getElementById("np");p.hidden=!p.hidden;if(!p.hidden&&window.loadN)window.loadN();return false}
-if(document.getElementById("bell")){const CS="' .
-        $_SESSION["csrf"] .
-        '";let LAST=+document.getElementById("bc").textContent;
-function toast(i){if(window.Notification&&Notification.permission=="granted"&&document.hidden)new Notification("Workonnect",{body:i.msg,icon:"icons/icon-192.png"});let t=document.createElement("a");t.className="toast";t.href=i.link;t.textContent="<span class="material-icons mi">notifications</span> "+i.msg;document.body.appendChild(t);setTimeout(()=>t.remove(),6000)}
-window.loadN=function(){fetch("notif.php").then(r=>r.json()).then(d=>{let c=document.getElementById("bc"),b=document.getElementById("bell"),p=document.getElementById("np");
-c.textContent=d.unread;c.hidden=!d.unread;b.classList.toggle("ring",d.unread>0);p.innerHTML="";
-let h=document.createElement("div");h.className="nh";h.innerHTML="<b>\'.t(\'Notifications\').\'</b>";let m=document.createElement("a");m.href="#";m.textContent="\'.t(\'Mark all read\').\'";
-m.onclick=function(){fetch("notif.php",{method:"POST",body:new URLSearchParams({csrf:CS})}).then(window.loadN);return false};h.appendChild(m);p.appendChild(h);
-if(!d.items.length){let e=document.createElement("div");e.className="ni";e.textContent="\'.t(\'No notifications yet\').\'";p.appendChild(e)}
-d.items.forEach(i=>{let a=document.createElement("a");a.className="ni"+(i.seen==1?"":" new");a.href=i.link;a.textContent=i.msg;p.appendChild(a)});
-let v=document.createElement("a");v.className="nv";v.href="notifications.php";v.textContent="\'.t(\'View all notifications\').\'";p.appendChild(v);
-if(d.unread>LAST&&d.items[0])toast(d.items[0]);LAST=d.unread})};
-document.addEventListener("click",e=>{if(!document.getElementById("bell").contains(e.target))document.getElementById("np").hidden=true});
-window.loadN();setInterval(window.loadN,15000)}</script></body></html>';
+    echo "</script>";
+    notif_script();
+    echo "</body></html>";
 }
+
 require_once __DIR__ . "/dash_lib.php";
 require_once __DIR__ . "/login_otp.php";
 require_once __DIR__ . "/admin_sidebar.php";
+require_once __DIR__ . "/notif_lib.php";
