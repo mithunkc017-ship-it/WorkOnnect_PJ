@@ -85,6 +85,10 @@ function e($s)
 {
     return htmlspecialchars($s ?? "");
 }
+function t($s)
+{
+    return $s;
+} // text helper (English only): returns the text unchanged
 function me()
 {
     return $_SESSION["u"] ?? null;
@@ -368,119 +372,7 @@ function badge($v)
         ? '<span class="ok"><span class="material-icons mi-xs">verified</span> Verified</span>'
         : "";
 }
-// Language switch: ?lang=kn or ?lang=en is remembered in the session
-if (isset($_GET["lang"]) && in_array($_GET["lang"], ["en", "kn"])) {
-    $_SESSION["lang"] = $_GET["lang"];
-}
-if (($_SESSION["lang"] ?? "en") == "kn") {
-    ob_start(function ($b) {
-        foreach (headers_list() as $h) {
-            if (preg_match("/json|csv|Content-Disposition/i", $h)) {
-                return $b;
-            }
-        }
-        return kn_translate($b);
-    });
-}
-function t($s)
-{
-    static $kn = [
-        "Dashboard" => "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
-        "Post Job" => "ಕೆಲಸ ಪೋಸ್ಟ್ ಮಾಡಿ",
-        "Logout" => "ಲಾಗ್‌ಔಟ್",
-        "Login" => "ಲಾಗಿನ್",
-        "Register" => "ನೋಂದಣಿ",
-        "Find Workers" => "ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಿ",
-        "Find Skilled Workers Near You" =>
-            "ನಿಮ್ಮ ಹತ್ತಿರದ ನುರಿತ ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಿ",
-        "Post a job, get offers, track progress – all in one place." =>
-            "ಕೆಲಸ ಪೋಸ್ಟ್ ಮಾಡಿ, ಆಫರ್ ಪಡೆಯಿರಿ, ಪ್ರಗತಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ – ಎಲ್ಲವೂ ಒಂದೇ ಸ್ಥಳದಲ್ಲಿ.",
-        "Post a Job" => "ಕೆಲಸ ಪೋಸ್ಟ್ ಮಾಡಿ",
-        "Join as Worker" => "ಕೆಲಸಗಾರರಾಗಿ ಸೇರಿ",
-        "Services" => "ಸೇವೆಗಳು",
-        "How it works" => "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
-        "Verified Workers" => "ಪರಿಶೀಲಿತ ಕೆಲಸಗಾರರು",
-        "1. Customer posts a job" => "1. ಗ್ರಾಹಕರು ಕೆಲಸ ಪೋಸ್ಟ್ ಮಾಡುತ್ತಾರೆ",
-        "2. Workers send offers" => "2. ಕೆಲಸಗಾರರು ಆಫರ್ ಕಳುಹಿಸುತ್ತಾರೆ",
-        "3. Accept the best offer" => "3. ಉತ್ತಮ ಆಫರ್ ಒಪ್ಪಿಕೊಳ್ಳಿ",
-        "4. Track job progress" => "4. ಕೆಲಸದ ಪ್ರಗತಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
-    ];
-    if (($_SESSION["lang"] ?? "en") != "kn") {
-        return $s;
-    }
-    return $kn[$s] ?? (kn_dict()[$s] ?? $s);
-}
-function kn_dict()
-{
-    static $D = null;
-    if ($D === null) {
-        $src = require __DIR__ . "/lang_kn.php";
-        $D = [];
-        foreach ($src as $k => $v) {
-            $key = preg_replace(
-                "/^[\x{2300}-\x{27FF}\x{1F000}-\x{1FAFF}\x{FE0F}\x{200D}\s]+/u",
-                "",
-                $k,
-            );
-            $value = preg_replace(
-                "/^[\x{2300}-\x{27FF}\x{1F000}-\x{1FAFF}\x{FE0F}\x{200D}\s]+/u",
-                "",
-                $v,
-            );
-            if ($key === $k || !array_key_exists($key, $D)) {
-                $D[$key] = $value;
-            }
-        }
-    }
-    return $D;
-}
-function kn_translate($html)
-{
-    $D = kn_dict();
-    $tr = function ($s) use ($D) {
-        $k = trim($s);
-        if ($k === "") {
-            return $s;
-        }
-        if (isset($D[$k])) {
-            return str_replace($k, $D[$k], $s);
-        }
-        if (
-            preg_match('/^([^\p{L}\p{N}]+)(.+)$/us', $k, $m) &&
-            isset($D[$m[2]])
-        ) {
-            return str_replace($k, $m[1] . $D[$m[2]], $s);
-        }
-        return $s;
-    };
-    $o = preg_replace_callback(
-        "/(<[a-zA-Z][^>]*>)([^<>]+)(?=<)/u",
-        function ($m) use ($tr) {
-            if (
-                stripos($m[1], "<option") === 0 &&
-                stripos($m[1], "value=") === false
-            ) {
-                return $m[0];
-            }
-            if (preg_match("/^<(script|style|textarea)/i", $m[1])) {
-                return $m[0];
-            }
-            return $m[1] . $tr($m[2]);
-        },
-        $html,
-    );
-    if ($o !== null) {
-        $html = $o;
-    }
-    $o = preg_replace_callback(
-        '/\b(placeholder|title)="([^"]+)"/u',
-        function ($m) use ($tr) {
-            return $m[1] . '="' . $tr($m[2]) . '"';
-        },
-        $html,
-    );
-    return $o ?? $html;
-}
+
 function send_mail($to, $subj, $body, $log = true)
 {
     if ($log) {
@@ -695,9 +587,6 @@ function head($t)
 {
     $u = me();
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
-    $q = function ($l) {
-        return "?" . http_build_query(array_merge($_GET, ["lang" => $l]));
-    };
     echo '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' .
         e($t) .
         ' - Workonnect</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;600&family=Gaegu:wght@700&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"><link rel="stylesheet" href="style.css?v=' . (int) @filemtime(__DIR__ . "/style.css") . '"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1a6b7c"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"></head><body><nav><a class="logo" href="index.php">Work<span>onnect</span></a><button class="nvb" type="button" aria-label="Menu" onclick="this.parentNode.classList.toggle(`open`)"><span class="material-icons mi">menu</span></button><div>';
@@ -724,7 +613,6 @@ function head($t)
             echo '<a href="open_jobs.php"><span class="material-icons mi">lock_open</span> Open Jobs</a><a href="profile.php"><span class="material-icons mi">person</span>My Profile</a><a href="earnings.php"><span class="material-icons mi">payments</span> Earnings</a><a href="portfolio.php"><span class="material-icons mi">photo_library</span> My Work</a><a href="verify.php"><span class="material-icons mi">verified</span> Get Verified</a>';
         }
         if ($u["role"] == "admin") {
-            // echo '<a href="categories.php"><span class="material-icons mi">category</span>Categories</a><a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a><a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a><a href="coupons.php"><span class="material-icons mi">sell</span>Coupons</a><a href="log.php"><span class="material-icons mi">history</span>Activity</a>';
             echo '<a href="dash.php" id="admBtn" onclick="return window.admTog ? admTog() : true"><span class="material-icons mi">apps</span>Admin Tools</a>';
         }
         echo '<a href="account_settings.php"><span class="material-icons mi">settings</span>Settings</a>';
@@ -743,49 +631,12 @@ function head($t)
         '</a>' .
         ($isHome
             ? ""
-            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a><a href="' .
-                $q("kn") .
-                '"><span class="material-icons mi">translate</span>ಕನ್ನಡ</a><a href="' .
-                $q("en") .
-                '">EN</a>') .
+            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
         "</div></nav>" .
         announceBar() .
         "<main>" . adm_side_open();
 }
 
-
-// function foot()
-// {
-//     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
-//         echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
-//     if (!$isHome) {
-//         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
-// <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
-//     }
-//     echo '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});';
-//     if (!$isHome) {
-//         echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
-//     }
-//     if (!$isHome) {
-//         echo "if(localStorage.d)document.body.classList.add('dark');";
-//     }
-//     echo '
-// function tb(){if(window.Notification&&Notification.permission=="default")Notification.requestPermission();var p=document.getElementById("np");p.hidden=!p.hidden;if(!p.hidden&&window.loadN)window.loadN();return false}
-// if(document.getElementById("bell")){const CS="' .
-//         $_SESSION["csrf"] .
-//         '";let LAST=+document.getElementById("bc").textContent;
-// function toast(i){if(window.Notification&&Notification.permission=="granted"&&document.hidden)new Notification("Workonnect",{body:i.msg,icon:"icons/icon-192.png"});let t=document.createElement("a");t.className="toast";t.href=i.link;t.textContent="<span class="material-icons mi">notifications</span> "+i.msg;document.body.appendChild(t);setTimeout(()=>t.remove(),6000)}
-// window.loadN=function(){fetch("notif.php").then(r=>r.json()).then(d=>{let c=document.getElementById("bc"),b=document.getElementById("bell"),p=document.getElementById("np");
-// c.textContent=d.unread;c.hidden=!d.unread;b.classList.toggle("ring",d.unread>0);p.innerHTML="";
-// let h=document.createElement("div");h.className="nh";h.innerHTML="<b>\'.t(\'Notifications\').\'</b>";let m=document.createElement("a");m.href="#";m.textContent="\'.t(\'Mark all read\').\'";
-// m.onclick=function(){fetch("notif.php",{method:"POST",body:new URLSearchParams({csrf:CS})}).then(window.loadN);return false};h.appendChild(m);p.appendChild(h);
-// if(!d.items.length){let e=document.createElement("div");e.className="ni";e.textContent="\'.t(\'No notifications yet\').\'";p.appendChild(e)}
-// d.items.forEach(i=>{let a=document.createElement("a");a.className="ni"+(i.seen==1?"":" new");a.href=i.link;a.textContent=i.msg;p.appendChild(a)});
-// let v=document.createElement("a");v.className="nv";v.href="notifications.php";v.textContent="\'.t(\'View all notifications\').\'";p.appendChild(v);
-// if(d.unread>LAST&&d.items[0])toast(d.items[0]);LAST=d.unread})};
-// document.addEventListener("click",e=>{if(!document.getElementById("bell").contains(e.target))document.getElementById("np").hidden=true});
-// window.loadN();setInterval(window.loadN,15000)}</script></body></html>';
-// }
 function foot()
 {
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
@@ -799,8 +650,37 @@ function foot()
         echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
         echo "if(localStorage.d)document.body.classList.add('dark');";
     }
-    echo "</script>";
+        echo "</script>";
     notif_script();
+    echo <<<'HTML'
+<style>
+nav a.nvon{background:linear-gradient(90deg,#3b82f6,#6366f1)!important;color:#fff!important}
+nav a.nvon .material-icons{color:#fff!important}
+</style>
+<script>
+(function(){
+  var nav=document.querySelector("body>nav"); if(!nav) return;
+  var links=[].slice.call(nav.querySelectorAll("a[href]"));
+  var adm=document.getElementById("admBtn");
+  var old=["active","on","current","sel","is-active","selected","nvon"];
+  var cur=location.pathname.split("/").pop()||"index.php";
+  var tools=["dashboard.php","analytics.php","charts.php","heatmap.php","qr_payments.php","settlements.php","coupons.php","disputes.php","categories.php","verifications.php","certificates.php","complaints.php","announcements.php","log.php","login_history.php"];
+  function file(a){return (a.getAttribute("href")||"").split("#")[0].split("?")[0].split("/").pop();}
+  function paint(){
+    links.forEach(function(a){old.forEach(function(c){a.classList.remove(c)})});
+    var open=document.body.classList.contains("adm-open"), pick=null;
+    if(adm && (open || (tools.indexOf(cur)>-1 && cur!=="dash.php"))) pick=adm;
+    if(!pick){
+      pick=links.filter(function(a){return a!==adm && file(a)===cur})[0]||null;
+    }
+    if(pick) pick.classList.add("nvon");
+  }
+  paint();
+  new MutationObserver(paint).observe(document.body,{attributes:true,attributeFilter:["class"]});
+})();
+</script>
+
+HTML;
     echo "</body></html>";
 }
 

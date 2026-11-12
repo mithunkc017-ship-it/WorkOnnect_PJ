@@ -105,7 +105,16 @@ if (preg_match('#<nav>(.*?)</nav>#s', $wkH, $m)) {
             ) {
                 continue; // skip bell/dark toggle/language links
             }
-            $raw = trim(strip_tags($a[2]));
+            // FIX: remove the Material Icons text (e.g. "person", "payments") before reading the label
+            $raw = trim(
+                strip_tags(
+                    preg_replace(
+                        '#<span class="material-icons[^"]*">.*?</span>#s',
+                        "",
+                        $a[2],
+                    ),
+                ),
+            );
             $lab = preg_replace('/^[^\p{L}\p{N}]+/u', "", $raw);
             $label = trim($lab === null ? $raw : $lab);
             if ($label === "") {
