@@ -175,6 +175,10 @@ auth_open(
 
 @media (max-width:340px){.otp-field.js .otp-slots{grid-template-columns:repeat(6,30px);gap:5px}.otp-slot{height:36px}}
 @media (prefers-reduced-motion:reduce){.otp-page,.otp-page *,.otp-page *::before,.otp-page *::after{animation:none!important;transition:none!important}}
+
+.otp-page .cta .go,.authcard .otp-page .cta .go,.authcard .otp-page .cta .go svg{display:none!important}
+.authcard .otp-page button.ghost,.otp-page .ghost{display:flex!important;width:fit-content!important;min-width:0!important;height:24px!important;min-height:0!important;margin:8px auto 0!important;padding:0 10px!important;gap:4px!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;border:1px solid rgba(128,128,128,.28)!important;font-size:.68rem!important;font-weight:500!important;line-height:1!important;align-items:center;justify-content:center}
+.otp-page .ghost svg{width:11px!important;height:11px!important}
 </style>
 
 <div class="otp-page">
