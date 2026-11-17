@@ -1,3 +1,14 @@
+<?php
+// Dark mode icon pair: moon (light mode) + sun (dark mode). CSS below shows the right one based on body.dark - no JS needed.
+$wkSun =
+    '<svg class="wk-i wk-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+$wkDm = $wkSvg("moon", "wk-i wk-moon") . $wkSun;
+?>
+<style>
+.wk-iconbtn .wk-sun{display:none!important}
+body.dark .wk-iconbtn .wk-sun{display:inline-block!important}
+body.dark .wk-iconbtn .wk-moon{display:none!important}
+</style>
 <header class="wk-header" id="wkHeader">
 <a class="wk-skip" href="#top">Skip to content</a>
 <div class="wk-bar" role="navigation" aria-label="Main navigation">
@@ -10,7 +21,7 @@
 <div class="wk-right">
 <div class="wk-util wk-desk">
 <?php if ($wkHelp) { ?><a class="wk-quiet" href="help.php"><span>Help</span></a><?php } ?>
-<button type="button" class="wk-iconbtn" aria-label="Toggle dark mode" onclick="document.body.classList.toggle('dark');localStorage.d=document.body.classList.contains('dark')?1:'';return false"><?= $wkSvg("moon") ?></button>
+<button type="button" class="wk-iconbtn" aria-label="Toggle dark mode" onclick="document.body.classList.toggle('dark');localStorage.d=document.body.classList.contains('dark')?1:'';return false"><?= $wkDm ?></button>
 </div>
 <?php if ($u) { ?>
 <a class="wk-btn wk-btn-ghost wk-btn-sm wk-desk" href="dash.php"><span>Dashboard</span></a>
@@ -50,7 +61,7 @@
 <div class="wk-pbtns"><a class="wk-btn wk-btn-ghost" href="login.php"><span>Login</span></a><a class="wk-btn wk-btn-primary" href="register.php"><span>Register</span></a></div>
 <?php } ?>
 <div class="wk-putil">
-<button type="button" class="wk-iconbtn" aria-label="Toggle dark mode" onclick="document.body.classList.toggle('dark');localStorage.d=document.body.classList.contains('dark')?1:'';return false"><?= $wkSvg("moon") ?></button>
+<button type="button" class="wk-iconbtn" aria-label="Toggle dark mode" onclick="document.body.classList.toggle('dark');localStorage.d=document.body.classList.contains('dark')?1:'';return false"><?= $wkDm ?></button>
 </div>
 </div>
 </header>

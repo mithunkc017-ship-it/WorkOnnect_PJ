@@ -631,7 +631,7 @@ function head($t)
         '</a>' .
         ($isHome
             ? ""
-            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
+            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" id="dmBtn" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi" id="dmIcon">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
         "</div></nav>" .
         announceBar() .
         "<main>" . adm_side_open();
@@ -677,6 +677,42 @@ nav a.nvon .material-icons{color:#fff!important}
   }
   paint();
   new MutationObserver(paint).observe(document.body,{attributes:true,attributeFilter:["class"]});
+})();
+</script>
+<script>
+(function(){
+  // make sure a sun icon exists even if landing_icons.svg has no #i-sun
+  if(!document.getElementById("i-sun")){
+    var s=document.createElement("div");
+    s.style.display="none";
+    s.innerHTML='<svg xmlns="http://www.w3.org/2000/svg"><symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol></svg>';
+    document.body.appendChild(s);
+  }
+  function isDark(){
+    var d=document.documentElement,b=document.body;
+    return b.classList.contains("dark")||d.classList.contains("dark")||
+           b.classList.contains("dark-mode")||d.classList.contains("dark-mode")||
+           d.getAttribute("data-theme")==="dark"||b.getAttribute("data-theme")==="dark";
+  }
+  function sync(){
+    var dark=isDark();
+    // 1) SVG icons (landing page): any <use> pointing to moon or sun
+    document.querySelectorAll('use[href="#i-moon"],use[href="#i-sun"],use[*|href="#i-moon"],use[*|href="#i-sun"]').forEach(function(u){
+      u.setAttribute("href",dark?"#i-sun":"#i-moon");
+    });
+    // 2) Material icons (inner pages)
+    document.querySelectorAll(".material-icons").forEach(function(m){
+      var t=m.textContent.trim();
+      if(t==="dark_mode"||t==="light_mode") m.textContent=dark?"light_mode":"dark_mode";
+    });
+    var b=document.getElementById("dmBtn");
+    if(b) b.setAttribute("aria-label",dark?"Switch to light mode":"Switch to dark mode");
+  }
+  sync();
+  var mo=new MutationObserver(sync);
+  mo.observe(document.body,{attributes:true,attributeFilter:["class","data-theme"]});
+  mo.observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
+  document.addEventListener("click",function(){setTimeout(sync,0);setTimeout(sync,150);});
 })();
 </script>
 
