@@ -1,4 +1,3 @@
-
 <?php
 require "config.php";
 
@@ -118,7 +117,7 @@ auth_open(
 <button class="cta" data-busy="<?= e(
     t("Logging in…"),
 ) ?>"><span>Log in</span><b class="go">→</b></button>
-<p class="alt" style="margin-top:14px"><a href="forgot.php">Forgot password?</a></p>
+<p class="alt" style="margin-top:14px">Can’t remember your password? <a href="forgot.php">Recover it</a>.</p>
 <?php
 auth_close('New to Workonnect? <a href="register.php">Create an account</a>');
 foot();

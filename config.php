@@ -532,7 +532,15 @@ function fld($label, $icon, $html)
 }
 function pwf($label, $name, $ph, $meter = false, $auto = "current-password")
 {
-    return '<label class="lb">' .
+    static $eyeCss = false;
+    $css = "";
+    if (!$eyeCss) {
+        $eyeCss = true;
+        $css =
+            '<style>.fld .eye{display:flex;align-items:center;justify-content:center;padding:4px 8px;background:none;border:0;box-shadow:none;cursor:pointer;color:#6b7c85;line-height:0}.fld .eye:hover{color:#1a6b7c}.fld .eye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.fld .eye .ei-off{display:none}.fld .eye.on .ei-off{display:block}.fld .eye.on .ei-on{display:none}</style>';
+    }
+    return $css .
+        '<label class="lb">' .
         t($label) .
         '</label><div class="fld"><span class="material-icons mi">lock</span><input type="password" name="' .
         $name .
@@ -542,20 +550,21 @@ function pwf($label, $name, $ph, $meter = false, $auto = "current-password")
         $auto .
         '" minlength="6" required' .
         ($meter ? " data-meter" : "") .
-        '><button type="button" class="eye" data-s="' .
+        '><button type="button" class="eye" aria-label="' .
+        e(t("Show")) .
+        '" aria-pressed="false" data-s="' .
         e(t("Show")) .
         '" data-h="' .
         e(t("Hide")) .
-        '">' .
-        t("Show") .
-        "</button></div>" .
+        '"><svg class="ei-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="ei-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>' .
         ($meter
             ? '<div class="meter"><i></i><i></i><i></i><i></i></div><small id="pwl"></small>'
             : "");
 }
 function auth_open($eyebrow, $title, $sub = "")
 {
-    echo '<style>body>nav,body>footer{display:none}</style><div class="auth"><form class="authcard" method="post"><span class="mark">W</span><p class="eyebrow">' .
+    $GLOBALS["wk_auth"] = true; // login/register-style pages: no floating chat button
+    echo '<style>body>nav,body>footer{display:none}.authcard .mark{display:none!important}.authcard .cta{display:flex!important;align-items:center;justify-content:center;width:100%;border-radius:999px!important;font-weight:700!important;letter-spacing:.02em;padding:14px 20px!important;cursor:pointer}.authcard .cta .go{display:none!important}.authcard .alt{text-align:center;opacity:.8;font-size:.95rem}.authcard .alt a{color:inherit!important;text-decoration:underline!important;font-weight:inherit!important}.authcard .or + .alt a{color:#3b82f6!important;font-weight:700!important;text-decoration:none!important}.authcard .or + .alt a:hover{text-decoration:underline!important}</style><div class="auth"><form class="authcard" method="post"><p class="eyebrow">' .
         e(t($eyebrow)) .
         "</p><h1>" .
         e(t($title)) .
@@ -581,7 +590,7 @@ function auth_close($alt = "")
         t("← Back to Workonnect") .
         "</a></div><script>var L=" .
         json_encode($L, JSON_UNESCAPED_UNICODE) .
-        ';document.querySelectorAll(".authcard").forEach(function(f){f.addEventListener("submit",function(e){var b=e.submitter;if(b&&b.classList.contains("cta")){b.querySelector("span").textContent=b.dataset.busy;b.querySelector(".go").textContent="…";setTimeout(function(){b.disabled=true},0)}})});document.querySelectorAll(".eye").forEach(function(b){b.onclick=function(){var i=b.closest(".fld").querySelector("input"),s=i.type=="password";i.type=s?"text":"password";b.textContent=s?b.dataset.h:b.dataset.s}});var pw=document.querySelector("input[data-meter]");if(pw){var m=document.querySelectorAll(".meter i"),l=document.getElementById("pwl");pw.oninput=function(){var v=pw.value,n=0;if(v.length>=8)n++;if(/[a-z]/.test(v)&&/[A-Z]/.test(v))n++;if(/\\d/.test(v))n++;if(/[^A-Za-z0-9]/.test(v)||v.length>=12)n++;if(!v)n=0;m.forEach(function(x,k){x.className=k<n?"on s"+n:""});l.textContent=v?(L[n-1]||L[0]):""}}</script>';
+        ';document.querySelectorAll(".authcard").forEach(function(f){f.addEventListener("submit",function(e){var b=e.submitter;if(b&&b.classList.contains("cta")){b.querySelector("span").textContent=b.dataset.busy;b.querySelector(".go").textContent="…";setTimeout(function(){b.disabled=true},0)}})});document.querySelectorAll(".eye").forEach(function(b){b.onclick=function(){var i=b.closest(".fld").querySelector("input"),s=i.type=="password";i.type=s?"text":"password";b.classList.toggle("on",s);b.setAttribute("aria-label",s?b.dataset.h:b.dataset.s);b.setAttribute("aria-pressed",s?"true":"false")}});var pw=document.querySelector("input[data-meter]");if(pw){var m=document.querySelectorAll(".meter i"),l=document.getElementById("pwl");pw.oninput=function(){var v=pw.value,n=0;if(v.length>=8)n++;if(/[a-z]/.test(v)&&/[A-Z]/.test(v))n++;if(/\\d/.test(v))n++;if(/[^A-Za-z0-9]/.test(v)||v.length>=12)n++;if(!v)n=0;m.forEach(function(x,k){x.className=k<n?"on s"+n:""});l.textContent=v?(L[n-1]||L[0]):""}}</script>';
 }
 function head($t)
 {
@@ -640,14 +649,17 @@ function head($t)
 function foot()
 {
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
+    $isAuth = !empty($GLOBALS["wk_auth"]);
     echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
-    if (!$isHome) {
+    if (!$isHome && !$isAuth) {
         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
 <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
     }
     echo '<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");var DP;addEventListener("beforeinstallprompt",function(e){e.preventDefault();DP=e;var i=document.getElementById("inst");i.hidden=false;i.onclick=function(){DP.prompt();return false}});';
     if (!$isHome) {
+        if (!$isAuth) {
         echo 'ci.onkeydown=async e=>{if(e.key!="Enter"||!ci.value.trim())return;let t=ci.value;ci.value="";add(t,"me");let r=await fetch("chat.php",{method:"POST",body:JSON.stringify({msg:t})});add((await r.json()).reply)};function add(t,c){let p=document.createElement("p");p.className=c||"";p.textContent=t;cm.appendChild(p);cm.scrollTop=1e9}';
+        }
         echo "if(localStorage.d)document.body.classList.add('dark');";
     }
         echo "</script>";
