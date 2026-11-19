@@ -802,7 +802,17 @@ function head($t)
             echo '<a href="open_jobs.php"><span class="material-icons mi">lock_open</span> Open Jobs</a><a href="profile.php"><span class="material-icons mi">person</span>My Profile</a><a href="earnings.php"><span class="material-icons mi">payments</span> Earnings</a><a href="portfolio.php"><span class="material-icons mi">photo_library</span> My Work</a><a href="verify.php"><span class="material-icons mi">verified</span> Get Verified</a>';
         }
         if ($u["role"] == "admin") {
-            echo '<a href="dash.php" id="admBtn" onclick="return window.admTog ? admTog() : true"><span class="material-icons mi">apps</span>Admin Tools</a>';
+            // frequently used admin pages are one click away; "More Tools" opens the popup with the rest
+            echo '<a href="dashboard.php"><span class="material-icons mi">tune</span>Manage</a>' .
+                '<a href="analytics.php"><span class="material-icons mi">analytics</span>Analytics</a>' .
+                '<a href="qr_payments.php"><span class="material-icons mi">payments</span>Payments</a>' .
+                '<a href="settlements.php"><span class="material-icons mi">attach_money</span>Settlements</a>' .
+                '<a href="disputes.php"><span class="material-icons mi">balance</span>Disputes</a>' .
+                '<a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a>' .
+                '<a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a>' .
+                '<a href="announcements.php"><span class="material-icons mi">campaign</span>Announcements</a>' .
+                '<a href="log.php"><span class="material-icons mi">history</span>Activity</a>' .
+                '<a href="dash.php" id="admBtn" onclick="return window.admTog ? admTog() : true"><span class="material-icons mi">apps</span>More Tools</a>';
         }
         echo '<a href="account_settings.php"><span class="material-icons mi">settings</span>Settings</a>';
         echo '<a href="logout.php"><span class="material-icons mi">logout</span>' .
@@ -820,7 +830,10 @@ function head($t)
         '</a>' .
         ($isHome
             ? ""
-            : '<a href="help.php"><span class="material-icons mi">help</span>Help</a><a href="#" id="dmBtn" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi" id="dmIcon">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
+            : (($u && $u["role"] == "admin")
+                ? ""
+                : '<a href="help.php"><span class="material-icons mi">help</span>Help</a>') .
+            '<a href="#" id="dmBtn" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi" id="dmIcon">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
         "</div></nav>" .
         announceBar() .
         "<main>" . adm_side_open();
@@ -856,12 +869,11 @@ nav a.nvon .material-icons{color:#fff!important}
   var adm=document.getElementById("admBtn");
   var old=["active","on","current","sel","is-active","selected","nvon"];
   var cur=location.pathname.split("/").pop()||"index.php";
-  var tools=["dashboard.php","analytics.php","charts.php","heatmap.php","qr_payments.php","settlements.php","coupons.php","disputes.php","categories.php","verifications.php","certificates.php","complaints.php","announcements.php","log.php","login_history.php"];
   function file(a){return (a.getAttribute("href")||"").split("#")[0].split("?")[0].split("/").pop();}
   function paint(){
     links.forEach(function(a){old.forEach(function(c){a.classList.remove(c)})});
     var open=document.body.classList.contains("adm-open"), pick=null;
-    if(adm && (open || (tools.indexOf(cur)>-1 && cur!=="dash.php"))) pick=adm;
+    if(adm && open) pick=adm;
     if(!pick){
       pick=links.filter(function(a){return a!==adm && file(a)===cur})[0]||null;
     }
