@@ -3,7 +3,7 @@
 session_start();
 require_once __DIR__ . "/settings.php";
 if (!defined("PLATFORM_UPI")) {
-    define("PLATFORM_UPI", "yourname@upi");
+    define("PLATFORM_UPI", "mithunshetty017@oksbi"); // the platform's UPI ID that receives customer payments (QR). Override it in settings.php
 } // the platform's UPI ID that receives customer payments (QR). Override it in settings.php
 if (!defined("PLATFORM_NAME")) {
     define("PLATFORM_NAME", "Workonnect");
@@ -564,7 +564,187 @@ function pwf($label, $name, $ph, $meter = false, $auto = "current-password")
 function auth_open($eyebrow, $title, $sub = "")
 {
     $GLOBALS["wk_auth"] = true; // login/register-style pages: no floating chat button
-    echo '<style>body>nav,body>footer{display:none}.authcard .mark{display:none!important}.authcard .cta{display:flex!important;align-items:center;justify-content:center;width:100%;border-radius:999px!important;font-weight:700!important;letter-spacing:.02em;padding:14px 20px!important;cursor:pointer}.authcard .cta .go{display:none!important}.authcard .alt{text-align:center;opacity:.8;font-size:.95rem}.authcard .alt a{color:inherit!important;text-decoration:underline!important;font-weight:inherit!important}.authcard .or + .alt a{color:#3b82f6!important;font-weight:700!important;text-decoration:none!important}.authcard .or + .alt a:hover{text-decoration:underline!important}</style><div class="auth"><form class="authcard" method="post"><p class="eyebrow">' .
+    echo '<style>body>nav,body>footer{display:none}.authcard .mark{display:none!important}.authcard .cta{display:flex!important;align-items:center;justify-content:center;width:100%;border-radius:999px!important;font-weight:700!important;letter-spacing:.02em;padding:14px 20px!important;cursor:pointer}.authcard .cta .go{display:none!important}.authcard .alt{text-align:center;opacity:.8;font-size:.95rem}.authcard .alt a{color:inherit!important;text-decoration:underline!important;font-weight:inherit!important}.authcard .or + .alt a{color:#3b82f6!important;font-weight:700!important;text-decoration:none!important}.authcard .or + .alt a:hover{text-decoration:underline!important}/* ==========================================================
+   Login page button – blue (separate file, CSS only)
+   Does not touch any PHP / JS / form behaviour.
+   Change --login-blue to restyle: #2563eb = pure blue,
+   #4f46e5 = indigo (same as the rest of the app)
+   ========================================================== */
+.authcard {
+    --login-blue:      #4f46e5;
+    --login-blue-dark: #4338ca;
+    --login-blue-glow: rgba(79, 70, 229, .45);
+}
+
+html body .authcard .cta {
+    background: var(--login-blue);
+    color: #fff;
+    border: 0;
+    box-shadow: 0 1px 2px var(--login-blue-glow), 0 8px 18px -8px var(--login-blue-glow);
+    transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+html body .authcard .cta:hover {
+    background: var(--login-blue-dark);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--login-blue-glow), 0 12px 22px -8px var(--login-blue-glow);
+}
+html body .authcard .cta:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25);
+}
+html body .authcard .cta:focus-visible {
+    outline: 3px solid rgba(79, 70, 229, .4);
+    outline-offset: 3px;
+}
+/* while "Logging in…" is showing (button is disabled by the existing script) */
+html body .authcard .cta:disabled {
+    background: var(--login-blue);
+    opacity: .7;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}
+/* ==========================================================
+   Login page button – blue (separate file, CSS only)
+   Does not touch any PHP / JS / form behaviour.
+   Change --login-blue to restyle: #2563eb = pure blue,
+   #4f46e5 = indigo (same as the rest of the app)
+   ========================================================== */
+.authcard {
+    --login-blue:      #4f46e5;
+    --login-blue-dark: #4338ca;
+    --login-blue-glow: rgba(79, 70, 229, .45);
+}
+
+html body .authcard .cta {
+    background: var(--login-blue);
+    color: #fff;
+    border: 0;
+    box-shadow: 0 1px 2px var(--login-blue-glow), 0 8px 18px -8px var(--login-blue-glow);
+    transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+html body .authcard .cta:hover {
+    background: var(--login-blue-dark);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--login-blue-glow), 0 12px 22px -8px var(--login-blue-glow);
+}
+html body .authcard .cta:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25);
+}
+html body .authcard .cta:focus-visible {
+    outline: 3px solid rgba(79, 70, 229, .4);
+    outline-offset: 3px;
+}
+/* while "Logging in…" is showing (button is disabled by the existing script) */
+html body .authcard .cta:disabled {
+    background: var(--login-blue);
+    opacity: .7;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ==========================================================
+   Register page buttons – same blue as login
+   (Send code, Verify, Create account). CSS only.
+   ========================================================== */
+html body .vsend,
+html body .vgo {
+    background: var(--login-blue);
+    color: #fff;
+    border: 0;
+    box-shadow: 0 1px 2px var(--login-blue-glow), 0 4px 10px -4px var(--login-blue-glow);
+    transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+html body .vsend:hover:not(:disabled),
+html body .vgo:hover:not(:disabled) {
+    background: var(--login-blue-dark);
+    filter: none;
+    color: #fff;
+    box-shadow: 0 2px 4px var(--login-blue-glow), 0 8px 16px -6px var(--login-blue-glow);
+}
+html body .vsend:active:not(:disabled),
+html body .vgo:active:not(:disabled) {
+    background: var(--login-blue-dark);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25);
+}
+html body .vsend:focus-visible,
+html body .vgo:focus-visible {
+    outline: 3px solid rgba(79, 70, 229, .4);
+    outline-offset: 2px;
+}
+html body .vsend:disabled,
+html body .vgo:disabled {
+    background: var(--login-blue);
+    opacity: .55;
+    filter: none;
+    box-shadow: none;
+}
+/* Create account button when still locked (before email/phone are verified) */
+html body .authcard .cta:disabled { cursor: not-allowed; }
+
+/* focus rings on register fields: teal -> blue */
+html body .rgrid .fld:focus-within { box-shadow: 0 0 0 3px rgba(79, 70, 229, .2); }
+html body .votp .vcode:focus {
+    border-color: var(--login-blue);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .2);
+}
+
+/* terms checkbox: blue when ticked, white tick */
+.chk{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:.9rem;line-height:1.4}
+.chk input[type=checkbox]{
+  -webkit-appearance:none;appearance:none;flex:none;
+  width:20px;height:20px;margin:1px 0 0;cursor:pointer;
+  border:2px solid rgba(128,128,128,.55);border-radius:6px;background:transparent;
+  display:grid;place-content:center;
+  transition:background .15s,border-color .15s,box-shadow .15s}
+.chk input[type=checkbox]::after{
+  content:"";width:10px;height:10px;transform:scale(0);transition:transform .15s ease;
+  background:#fff;
+  clip-path:polygon(14% 44%,0 58%,40% 100%,100% 18%,86% 4%,40% 70%)}
+.chk input[type=checkbox]:checked{background:#1a73e8;border-color:#1a73e8}
+.chk input[type=checkbox]:checked::after{transform:scale(1)}
+.chk input[type=checkbox]:focus-visible{box-shadow:0 0 0 3px rgba(26,115,232,.35)}
+.chk a{color:#1a73e8;text-decoration:none;font-weight:600}
+.chk a:hover{text-decoration:underline}
+
+/* divider + Google button */
+.odiv{display:flex;align-items:center;gap:12px;margin:16px 0 12px;font-size:.85rem;opacity:.7}
+.odiv::before,.odiv::after{content:"";flex:1;height:1px;background:rgba(128,128,128,.35)}
+.gbtn{
+  display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:48px;
+  border:1px solid #dadce0;border-radius:12px;background:#fff;color:#3c4043;
+  font-family:inherit;font-weight:600;font-size:.95rem;text-decoration:none;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+  transition:box-shadow .15s,background .15s,transform .12s}
+.gbtn:hover{background:#f8f9fa;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.gbtn:active{transform:scale(.98)}
+.gbtn:focus-visible{outline:3px solid rgba(26,115,232,.4);outline-offset:2px}
+.gbtn svg{width:20px;height:20px;flex:none}
+
+
+/* footer + Google button alignment */
+.authcard a.gbtn{color:#3c4043;text-decoration:none}
+.authcard a.gbtn:hover{color:#3c4043}
+
+/* make everything after the form grid span the full card and center */
+.authcard > *:not(.rgrid):not(.err):not(.vprog){
+  grid-column:1/-1;
+  width:100%;
+  max-width:100%;
+  margin-left:0;
+  margin-right:0;
+  text-align:center;
+  justify-self:stretch;
+}
+.authcard > .back,
+.authcard > a[href*="index"]{text-align:left}
+
+
+</style><div class="auth"><form class="authcard" method="post"><p class="eyebrow">' .
         e(t($eyebrow)) .
         "</p><h1>" .
         e(t($title)) .
@@ -736,3 +916,4 @@ require_once __DIR__ . "/dash_lib.php";
 require_once __DIR__ . "/login_otp.php";
 require_once __DIR__ . "/admin_sidebar.php";
 require_once __DIR__ . "/notif_lib.php";
+require_once __DIR__ . "/payment_flow.php";
