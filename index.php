@@ -142,7 +142,11 @@ if ($u && $wkLogout === null) {
 }
 $wkH = str_replace(
     "</head>",
-    '<meta name="description" content="Workonnect connects you with trusted local professionals. Post a job, get offers and track the work in one place."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="landing.css"><script>document.documentElement.classList.add("wk-js")</script></head>',
+    '<meta name="description" content="Workonnect connects you with trusted local professionals. Post a job, get offers and track the work in one place."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="landing.css"><link rel="stylesheet" href="landing_bg.css?v=' .
+        (int) @filemtime(__DIR__ . "/landing_bg.css") .
+        '"><link rel="stylesheet" href="landing_hero.css?v=' .
+        (int) @filemtime(__DIR__ . "/landing_hero.css") .
+        '"><script>document.documentElement.classList.add("wk-js")</script></head>',
     $wkH,
 );
 $wkH = preg_replace_callback("#<body\b([^>]*)>#i", function ($m) {
@@ -169,24 +173,20 @@ echo $wkDone && $wkH2 !== null ? $wkH2 : $wkH; // if the generic nav is ever not
 readfile(__DIR__ . "/landing_icons.svg");
 ?>
 <div id="sp"></div>
+<?php $wkPick = array_slice(array_values(array_unique(array_merge(array_values(array_intersect(["Electrician","Plumber","Painter","Carpenter","Driver","Cleaner"], $CATS)), $CATS))), 0, 6); ?>
 <section class="wk-hero" id="top" tabindex="-1" aria-labelledby="home-title">
-    <div class="wk-hero-bg" aria-hidden="true">
-        <i class="wk-blob wk-b1"></i>
-        <i class="wk-blob wk-b2"></i>
-        <i class="wk-dots"></i>
-    </div>
     <div class="wk-wrap wk-hero-in">
         <div class="wk-hero-copy">
-            <span class="wk-pill"><i></i><span>Trusted local professionals · Karnataka</span></span>
+            <span class="wk-pill"><?= $wkSvg("bolt") ?><span>Trusted Local Services</span></span>
             <h1 id="home-title"><span>Find Skilled Workers</span> <span class="wk-h1b">Near You</span></h1>
-            <p class="wk-lead">Post a job, get offers, track progress – all in one place.</p>
+            <p class="wk-lead">Connect with verified electricians, plumbers, painters, carpenters, drivers and more — quickly and easily!</p>
             <form class="wk-search" action="workers.php" method="get" role="search">
                 <label class="wk-f">
-                    <span class="wk-sr">Service category</span><?= $wkSvg("tools") ?>
+                    <span class="wk-sr">Service category</span><?= $wkSvg("search") ?>
                     <select name="cat">
-                        <option value="">All services</option>
+                        <option value="" data-label="All services" data-i="tools">Select a service</option>
                         <?php foreach ($CATS as $x) { ?>
-                            <option><?= e($x) ?></option>
+                            <option data-i="<?= $wkIconOf($x) ?>"><?= e($x) ?></option>
                         <?php } ?>
                     </select>
                 </label>
@@ -194,38 +194,22 @@ readfile(__DIR__ . "/landing_icons.svg");
                     <span class="wk-sr">Search area</span><?= $wkSvg("pin") ?>
                     <input name="ar" placeholder="Your area (e.g. Sagar)" autocomplete="off">
                 </label>
-                <button type="submit" class="wk-btn wk-btn-accent">
-                    <?= $wkSvg("search") ?><span>Search</span>
+                <button type="submit" class="wk-btn wk-btn-go">
+                    <span>Search</span><?= $wkSvg("arrow") ?>
                 </button>
             </form>
-            <!-- Temporarily hidden; keep these calls to action for later reuse.
-            <div class="wk-cta-row">
-                <a class="wk-btn wk-btn-light" href="post_job.php">
-                    <span>Post a Job</span><?= $wkSvg("arrow") ?>
-                </a>
-                <a class="wk-btn wk-btn-outline" href="register.php">
-                    <span>Join as Worker</span>
-                </a>
-            </div>
-            -->
-            <ul class="wk-trust">
-                <li><?= $wkSvg("shield") ?><span>ID-verified workers</span></li>
-                <li><?= $wkSvg("alert") ?><span>Emergency booking</span></li>
-                <li><?= $wkSvg("chat") ?><span>Live chat</span></li>
+            <ul class="wk-quick" aria-label="Popular services">
+                <?php foreach ($wkPick as $x) { ?>
+                    <li>
+                        <a href="workers.php?cat=<?= urlencode($x) ?>">
+                            <?= $wkSvg($wkIconOf($x)) ?><span><?= e($x) ?></span>
+                        </a>
+                    </li>
+                <?php } ?>
             </ul>
         </div>
         <div class="wk-hero-art" aria-hidden="true">
-            <div class="wk-orb">
-                <i class="wk-ring wk-r1"></i>
-                <i class="wk-ring wk-r2"></i>
-                <div class="wk-core"><?= $wkSvg("pin") ?></div>
-            </div>
-            <?php foreach (array_slice($CATS, 0, 6) as $i => $x) { ?>
-                <span class="wk-chip wk-c<?= $i ?>">
-                    <b><?= $wkSvg($wkIconOf($x)) ?></b>
-                    <span><?= e($x) ?></span>
-                </span>
-            <?php } ?>
+            <img src="images/hero/workers.jpg" alt="" width="736" height="518" fetchpriority="high">
         </div>
     </div>
 </section>
@@ -241,7 +225,7 @@ readfile(__DIR__ . "/landing_icons.svg");
             <li class="wk-stat">
                 <span class="wk-ic"><?= $wkSvg("shield") ?></span>
                 <b class="wk-num" data-n="<?= $nV ?>"><?= $nV ?></b>
-                <span class="wk-stat-l">Verified</span>
+                <span class="wk-stat-l">Verified professionals</span>
             </li>
             <li class="wk-stat">
                 <span class="wk-ic"><?= $wkSvg("check") ?></span>
@@ -256,6 +240,45 @@ readfile(__DIR__ . "/landing_icons.svg");
         </ul>
     </div>
 </section>
+
+<section class="wk-steps-sec" aria-labelledby="steps-title">
+    <div class="wk-wrap">
+        <p class="wk-eyebrow wk-reveal">How It Works</p>
+        <h2 id="steps-title" class="wk-reveal">Get Your Work Done in <em>3 Simple Steps</em></h2>
+        <ol class="wk-steps wk-reveal">
+            <li>
+                <div class="wk-step">
+                    <div class="wk-step-t">
+                        <h3><b>1</b>Search Service</h3>
+                        <p>Find the right skilled worker near your location.</p>
+                    </div>
+                    <span class="wk-step-ic" aria-hidden="true"><?= $wkSvg("search") ?></span>
+                </div>
+            </li>
+            <li class="wk-steps-arrow" aria-hidden="true"><?= $wkSvg("arrow") ?></li>
+            <li>
+                <div class="wk-step">
+                    <div class="wk-step-t">
+                        <h3><b>2</b>Book &amp; Connect</h3>
+                        <p>View profiles, check ratings and book your worker.</p>
+                    </div>
+                    <span class="wk-step-ic" aria-hidden="true"><?= $wkSvg("chat") ?></span>
+                </div>
+            </li>
+            <li class="wk-steps-arrow" aria-hidden="true"><?= $wkSvg("arrow") ?></li>
+            <li>
+                <div class="wk-step">
+                    <div class="wk-step-t">
+                        <h3><b>3</b>Get It Done</h3>
+                        <p>Track progress and rate the service.</p>
+                    </div>
+                    <span class="wk-step-ic" aria-hidden="true"><?= $wkSvg("check") ?></span>
+                </div>
+            </li>
+        </ol>
+    </div>
+</section>
+<script src="landing_select.js?v=<?= (int) @filemtime(__DIR__ . "/landing_select.js") ?>" defer></script>
 
 <section class="wk-sec" id="services" aria-labelledby="services-title">
     <div class="wk-wrap">
