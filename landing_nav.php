@@ -12,7 +12,7 @@ body.dark .wk-iconbtn .wk-moon{display:none!important}
 <header class="wk-header" id="wkHeader">
 <a class="wk-skip" href="#top">Skip to content</a>
 <div class="wk-bar" role="navigation" aria-label="Main navigation">
-<a class="wk-brand" href="index.php"><img src="icons/icon-192.png" width="36" height="36" alt=""><span class="wk-brand-t">Work<b>onnect</b></span></a>
+<a class="wk-brand" href="index.php"><img src="icons/icon-192.png" width="36" height="36" alt=""><span class="wk-brand-t">Work<b>Onnect</b></span></a>
 <ul class="wk-links">
 <?php foreach ($wkLinks as $l) { ?>
 <li><a class="wk-link<?= $l[2] ?>" href="<?= $l[0] ?>"<?= $l[3] ?>><span><?= $l[1] ?></span></a></li>
