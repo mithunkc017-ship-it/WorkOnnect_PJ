@@ -17,6 +17,33 @@ can review verification requests and manage marketplace activity.
   [Why Workonnect](why-workonnect.php), [Verified workers](verified-workers.php),
   and [Quick answers](quick-answers.php).
 
+## Application workflow
+
+1. **Create and verify an account.** Customers and workers register with their
+   email address. Email verification and worker ID verification help establish
+   account trust.
+2. **Create a job request.** A customer describes the service, location,
+   preferred time, budget, and any supporting photo. Matching workers receive
+   a notification.
+3. **Submit and compare offers.** Workers submit their price and message.
+   Customers compare profiles, ratings, completed jobs, verification status,
+   distance, and offer details before accepting a worker.
+4. **Hire and schedule the work.** Accepting an offer assigns the worker to the
+   job. The worker may propose labour and material costs or additional work;
+   the customer approves or declines those changes.
+5. **Track and update the job.** Workers use the job page to mark their arrival,
+   share before/after photos, and record progress. Customers receive in-app
+   notifications and can communicate through the chat.
+6. **Complete and pay.** After the work is completed, the customer confirms the
+   final amount and completes the configured payment flow. Workers confirm
+   cash payments and receive the applicable commission records.
+7. **Review and settle.** Customers and workers leave a rating and review,
+   while wallets, invoices, settlements, and payment records remain available
+   for later reference.
+
+Administrators verify worker identities, manage users and categories,
+announcements, reports, disputes, and platform payments.
+
 ## Requirements
 
 - PHP supported by your XAMPP installation.
