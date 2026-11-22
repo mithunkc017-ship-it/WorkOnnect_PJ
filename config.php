@@ -820,7 +820,7 @@ function head($t)
             echo '<a href="dashboard.php"><span class="material-icons mi">tune</span>Manage</a>' .
                 '<a href="analytics.php"><span class="material-icons mi">analytics</span>Analytics</a>' .
                 '<a href="qr_payments.php"><span class="material-icons mi">payments</span>Payments</a>' .
-                '<a href="settlements.php"><span class="material-icons mi">attach_money</span>Settlements</a>' .
+                // '<a href="settlements.php"><span class="material-icons mi">attach_money</span>Settlements</a>' .
                 '<a href="disputes.php"><span class="material-icons mi">balance</span>Disputes</a>' .
                 '<a href="verifications.php"><span class="material-icons mi">fact_check</span>Verifications</a>' .
                 '<a href="complaints.php"><span class="material-icons mi">report</span>Complaints</a>' .
