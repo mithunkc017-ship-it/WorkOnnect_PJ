@@ -1,6 +1,8 @@
 <?php
 // Shared setup: database, session, helper functions, page header/footer
 session_start();
+// include __DIR__ . "/ai_widget.php";   // ← delete this line
+include_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/settings.php";
 if (!defined("PLATFORM_UPI")) {
     define("PLATFORM_UPI", "mithunshetty017@oksbi"); // the platform's UPI ID that receives customer payments (QR). Override it in settings.php
@@ -15,18 +17,30 @@ $_SESSION["csrf"] = $_SESSION["csrf"] ?? bin2hex(random_bytes(16));
 // CSRF protection: every POST must carry the session token (chat.php is a JSON endpoint, exempt)
 if (
     $_SERVER["REQUEST_METHOD"] == "POST" &&
-    basename($_SERVER["SCRIPT_NAME"]) != "chat.php" &&
+    !in_array(basename($_SERVER["SCRIPT_NAME"]), ["chat.php", "ai_chat.php"]) &&
     !hash_equals($_SESSION["csrf"], $_POST["csrf"] ?? "")
 ) {
     die("Invalid request (CSRF check failed). Go back and try again.");
 }
 // Auto-insert the hidden token into every <form method="post">
+// ob_start(function ($b) {
+//     return preg_replace(
+//         '/(<form[^>]*method="post"[^>]*>)/i',
+//         '$1<input type="hidden" name="csrf" value="' . $_SESSION["csrf"] . '">',
+//         $b,
+//     );
+// });
 ob_start(function ($b) {
-    return preg_replace(
+    $b = preg_replace(
         '/(<form[^>]*method="post"[^>]*>)/i',
         '$1<input type="hidden" name="csrf" value="' . $_SESSION["csrf"] . '">',
         $b,
     );
+    // add the AI assistant just before </body> (not on login/register pages)
+    if (!empty($GLOBALS["WAI_HTML"]) && strpos($b, 'class="authcard"') === false && ($p = strripos($b, "</body>")) !== false) {
+        $b = substr($b, 0, $p) . $GLOBALS["WAI_HTML"] . substr($b, $p);
+    }
+    return $b;
 });
 // Database: MongoDB (set MONGO_URI / MONGO_DB in settings.php). $pdo keeps its old name: mongo_db.php runs the pages' SQL against MongoDB.
 require_once __DIR__ . "/mongo_db.php";
@@ -836,14 +850,14 @@ function head($t)
             '<a href="#" id="dmBtn" onclick="document.body.classList.toggle(\'dark\');localStorage.d=document.body.classList.contains(\'dark\')?1:\'\';return false"><span class="material-icons mi" id="dmIcon">dark_mode</span><span class="nl" style="display:none">Dark mode</span></a>') .
         "</div></nav>" .
         announceBar() .
-        "<main>" . adm_side_open();
+        "<main>";
 }
 
 function foot()
 {
     $isHome = basename($_SERVER["SCRIPT_NAME"]) == "index.php";
     $isAuth = !empty($GLOBALS["wk_auth"]);
-    echo adm_side_close() . '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
+    echo '</main><footer>© Workonnect – Final Year BCA Project · <a href="#" id="inst" hidden><span class="material-icons mi">install_mobile</span> Install app</a></footer>';
     if (!$isHome && !$isAuth) {
         echo '<style>#cb{position:fixed;right:18px;bottom:18px;z-index:9}#cw{display:none;width:300px;background:#fff;border-radius:10px;box-shadow:0 4px 18px #0004;margin-bottom:8px}#cw header{background:#1a6b7c;color:#fff;padding:10px;border-radius:10px 10px 0 0}#cm{height:240px;overflow:auto;padding:8px;font-size:14px}#cm p{margin:6px 0;padding:6px 10px;border-radius:8px;background:#eef3ff}#cm p.me{background:#fff3e0;text-align:right}#cw input{margin:0;border-radius:0 0 10px 10px}</style>
 <div id="cb"><div id="cw"><header><span class="material-icons mi">smart_toy</span> Workonnect Assistant</header><div id="cm"><p>Hi! Ask me how to post a job, send offers, pay or track progress.</p></div><input id="ci" placeholder="Type and press Enter"></div><button onclick="cw.style.display=cw.style.display==\'block\'?\'none\':\'block\'"><span class="material-icons mi">chat</span> Chat</button></div>';
@@ -926,6 +940,12 @@ HTML;
 
 require_once __DIR__ . "/dash_lib.php";
 require_once __DIR__ . "/login_otp.php";
-require_once __DIR__ . "/admin_sidebar.php";
 require_once __DIR__ . "/notif_lib.php";
 require_once __DIR__ . "/payment_flow.php";
+
+// Render the AI assistant once for logged-in users; the buffer above injects it into every HTML page
+if (me() && !in_array(basename($_SERVER["SCRIPT_NAME"]), ["ai_chat.php", "chat.php"])) {
+    ob_start();
+    include __DIR__ . "/ai_widget.php";
+    $GLOBALS["WAI_HTML"] = ob_get_clean();
+}
