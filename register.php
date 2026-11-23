@@ -1,4 +1,4 @@
-<?php // Create account (customer or worker) - compact two-column card, e-mail + phone codes verified on this page
+<?php // Create account - clean blue card, white background
 require "config.php";
 $err = "";
 $v = function ($k) {
@@ -6,11 +6,6 @@ $v = function ($k) {
 };
 $role = $_POST["role"] ?? "customer";
 $kn = ($_SESSION["lang"] ?? "en") == "kn";
-// Codes are checked by register_otp.php. Turn the phone code off with define("REG_PHONE_OTP", false); in settings.php.
-$needPhone = !defined("REG_PHONE_OTP") || REG_PHONE_OTP;
-$vo = $_SESSION["reg_otp"] ?? [];
-$vEmail = !empty($vo["email"]["ok"]) ? (string) $vo["email"]["target"] : "";
-$vPhone = !empty($vo["phone"]["ok"]) ? (string) $vo["phone"]["target"] : "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $pw = $_POST["password"] ?? "";
     if ($role == "worker" && ($_POST["skill"] ?? "") == "") {
@@ -25,8 +20,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $err = "Passwords do not match.";
     } elseif (empty($_POST["terms"])) {
         $err = "Please accept the Terms and Privacy Policy.";
-    } elseif ($needPhone && !hash_equals($vPhone, trim($_POST["phone"] ?? ""))) {
-        $err = "Please verify your phone number with the code we send.";
     } else {
         try {
             $rb = $pdo->prepare("SELECT id FROM users WHERE ref_code=?");
@@ -47,38 +40,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $err = "Email already registered.";
         }
         if (!$err) {
-            $em = trim($_POST["email"]);
-            if ($vEmail !== "" && hash_equals($vEmail, strtolower($em))) {
-                // e-mail code was already confirmed on this page: mark the account verified and go to login
-                $pdo->prepare("UPDATE users SET email_verified=1 WHERE email=?")->execute([$em]);
-                unset($_SESSION["reg_otp"]);
-                header("Location: login.php?ok=1");
-                exit();
-            }
-            send_otp($pdo, $em);
-            header("Location: verify_email.php?e=" . urlencode($em));
+            send_otp($pdo, trim($_POST["email"]));
+            header("Location: verify_email.php?e=" . urlencode(trim($_POST["email"])));
             exit();
         }
     }
 }
-// field with a "Send code" button, code box and status line (used for e-mail and phone)
-$vcell = function ($type, $label, $icon, $input) {
-    return '<div class="cell vcell" data-vt="' .
-        $type .
-        '">' .
-        fld(
-            $label,
-            $icon,
-            $input .
-                '<button type="button" class="vsend">Send code</button><span class="vbadge" hidden><span class="material-icons mi">check_circle</span> Verified</span>',
-        ) .
-        '<div class="votp" hidden><input class="vcode" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" aria-label="Verification code"><button type="button" class="vgo">Verify</button></div><small class="vmsg" aria-live="polite"></small></div>';
+// icon helper
+$mi = function ($n) {
+    return '<span class="material-icons">' . $n . "</span>";
 };
-$phoneInput =
-    '<input name="phone" value="' .
-    $v("phone") .
-    '" placeholder="10-digit mobile number" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" required>';
-$phoneIcon = '<span class="material-icons mi">phone</span>';
+// one field: label with icon on top, rounded box with round icon badge
+$wf = function ($label, $labelIcon, $inIcon, $inner) use ($mi) {
+    return '<div class="wkl">' . $mi($labelIcon) . e($label) . '</div><div class="wkf"><span class="wki">' . $inIcon . "</span>" . $inner . "</div>";
+};
 head("Register");
 auth_open(
     "Join Workonnect",
@@ -87,200 +62,149 @@ auth_open(
 );
 ?>
 <style>
-/* smaller card */
-.authcard{max-width:620px!important;width:100%!important;padding:20px 24px!important;font-size:.9rem}
-.authcard h1,.authcard h2{font-size:1.35rem!important;margin:0 0 4px!important}
-.authcard p{margin-top:0}
+body{background:#fff!important}
+.authcard{max-width:600px!important;width:100%!important;padding:24px 26px!important;background:#fff!important;border-radius:20px!important;box-shadow:0 10px 36px rgba(37,99,235,.12)!important;border:1px solid #e1e9fb!important}
 
-.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}
-.rgrid .cell{min-width:0}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-items:start}
+.rgrid .cell{min-width:0;margin-bottom:12px}
 .rgrid .full{grid-column:1/-1}
 #skillbox[hidden]+.ref{grid-column:1/-1}
 
-/* compact fields */
-.rgrid .fld{margin-bottom:8px!important}
-.rgrid .fld input,.rgrid .fld select{font-size:.88rem!important;padding-top:8px!important;padding-bottom:8px!important;min-height:0!important}
-.rgrid .fld label,.rgrid label.lbl{font-size:.8rem!important}
-.rgrid .mi{font-size:18px!important}
+/* label above field */
+.wkl{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.88rem;color:#0f1f44;margin:0 0 6px 2px}
+.wkl .material-icons{font-size:20px;color:#2563eb}
 
-/* field with inline button */
-.vcell .fld{display:flex;align-items:center}
-.vcell .fld input{flex:1;min-width:0}
+/* rounded field */
+.wkf{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 14px 0 6px;background:#fff;border:1.5px solid #d6e2fb;border-radius:999px;box-shadow:0 2px 8px rgba(37,99,235,.06);transition:border-color .2s,box-shadow .2s}
+.wkf:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.wki{flex:none;width:32px;height:32px;border-radius:50%;background:#e8effd;color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem}
+.wki .material-icons{font-size:18px}
+.wkf input,.wkf select{flex:1;min-width:0;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;font-size:.92rem;color:#0f1f44;padding:0!important;height:42px;font-family:inherit}
+.wkf input::placeholder{color:#8392b3}
+.wkf select{-webkit-appearance:none;appearance:none;cursor:pointer;font-weight:600;padding-right:28px!important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%232563eb' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M5 9l7 7 7-7'/%3E%3C/svg%3E") no-repeat right 4px center!important}
 
-/* small Send code / Verify buttons */
-.vsend,.vgo{
-  -webkit-appearance:none;appearance:none;border:0;cursor:pointer;
-  font-family:inherit;font-weight:600;color:#fff;background:#1a6b7c;
-  flex:none;border-radius:8px;padding:0 10px;height:30px;margin-right:6px;font-size:.78rem;white-space:nowrap;
-  transition:transform .12s ease,filter .15s ease;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.vsend:hover:not(:disabled),.vgo:hover:not(:disabled){filter:brightness(1.1)}
-.vsend:active:not(:disabled),.vgo:active:not(:disabled){transform:scale(.97)}
-.vsend:disabled,.vgo:disabled{opacity:.55;cursor:not-allowed}
-.authcard .cta:disabled{opacity:.55;cursor:not-allowed}
-.authcard .cta{min-height:42px!important;font-size:.95rem!important}
+/* terms / privacy tick box (own class, not affected by config.php) */
+.tk{display:flex;align-items:center;gap:9px;margin:2px 0 14px;font-size:.8rem;line-height:1.4;color:#0f1f44;cursor:pointer;position:relative}
+.tk input{position:absolute;opacity:0;width:16px;height:16px;margin:0;left:0;top:50%;transform:translateY(-50%);cursor:pointer}
+.tk .box{flex:none;width:16px;height:16px;box-sizing:border-box;border:1.5px solid #9db3e6;border-radius:4px;background:#fff;position:relative;transition:background .15s,border-color .15s}
+.tk input:checked+.box{background:#2563eb;border-color:#2563eb}
+.tk input:checked+.box::after{content:"";position:absolute;left:4.5px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tk input:focus-visible+.box{outline:2px solid rgba(37,99,235,.45);outline-offset:2px}
+.tk a{color:#2563eb;font-weight:600;text-decoration:none}
+.tk a:hover{text-decoration:underline}
 
-/* verified badge */
-.vbadge{flex:none;display:inline-flex;align-items:center;gap:3px;color:#2e9e5b;font-weight:600;font-size:.78rem;padding:3px 8px;margin-right:6px;border-radius:999px;background:rgba(46,158,91,.12);white-space:nowrap}
-.vbadge .mi{font-size:16px!important}
+/* Create account button */
+.authcard .cta{position:relative;width:100%;min-height:50px;border:0;border-radius:999px;cursor:pointer;color:#fff;font-family:inherit;font-weight:700;font-size:1.02rem;
+  display:flex!important;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(135deg,#3b82f6 0%,#2563eb 55%,#1d4ed8 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 20px rgba(37,99,235,.32)!important;
+  transition:transform .12s ease,filter .15s ease}
+.authcard .cta:hover:not(:disabled){filter:brightness(1.07)}
+.authcard .cta:active:not(:disabled){transform:translateY(1px) scale(.99)}
+.authcard .cta:disabled{opacity:.6;cursor:not-allowed}
+.authcard .cta .rk{font-size:24px}
+.authcard .cta .go{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1rem}
 
-/* code row */
-.votp{display:flex;gap:6px;margin-top:4px}
-.votp .vcode{flex:1;min-width:0;height:36px;letter-spacing:.3em;text-align:center;font-family:ui-monospace,Consolas,monospace;font-size:.95rem;padding:0 8px;border:1px solid rgba(128,128,128,.4);border-radius:8px;background:transparent;color:inherit}
-.votp .vcode:focus{outline:0;border-color:#1a6b7c;box-shadow:0 0 0 3px rgba(26,107,124,.22)}
-.votp .vgo{margin-right:0;height:36px;padding:0 14px}
-.vmsg{display:block;min-height:1em;margin:2px 0 6px;font-size:.76rem;opacity:.85}
-.vmsg.bad{color:#d64545;opacity:1}
-.votp[hidden],.vbadge[hidden],.vsend[hidden]{display:none!important}
+/* or divider + Google button */
+.odv{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:#8392b3;font-size:.85rem}
+.odv::before,.odv::after{content:"";flex:1;height:1px;background:#e1e9fb}
+.gbt{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;border:1.5px solid #d6e2fb;border-radius:999px;background:#fff;color:#0f1f44;font-weight:600;font-size:.95rem;text-decoration:none;transition:background .15s,box-shadow .15s}
+.gbt:hover{background:#f5f8ff;box-shadow:0 2px 10px rgba(37,99,235,.12)}
+.gbt svg{width:20px;height:20px;flex:none}
 
-/* tiny terms / privacy tick box */
-.authcard .chk{display:flex!important;align-items:flex-start;gap:7px;font-size:.76rem!important;line-height:1.35;margin:4px 0 10px!important}
-.authcard .chk input[type=checkbox]{
-  -webkit-appearance:none;appearance:none;box-sizing:border-box;
-  width:14px!important;height:14px!important;min-width:14px!important;max-width:14px!important;
-  padding:0!important;margin:1px 0 0!important;flex:none;
-  border:1.5px solid #8a8f98;border-radius:3px;background:transparent;
-  position:relative;cursor:pointer}
-.authcard .chk input[type=checkbox]:checked{background:#1a6b7c;border-color:#1a6b7c}
-.authcard .chk input[type=checkbox]:checked::after{
-  content:"";position:absolute;left:3px;top:0;width:3px;height:7px;
-  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
-.authcard .chk input[type=checkbox]:focus-visible{outline:2px solid rgba(26,107,124,.45);outline-offset:2px}
+/* sign in line */
+.wksign{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:.88rem;color:#4a5b82;justify-content:center}
+.wksign i{flex:1;height:1px;background:#e1e9fb;max-width:110px}
+.wksign a{color:#2563eb;font-weight:700;text-decoration:none}
 
-/* tablet / mobile */
 @media(max-width:700px){
-  .authcard{padding:16px 16px!important}
+  .authcard{padding:18px 16px!important}
   .rgrid{grid-template-columns:1fr}
 }
-@media(max-width:380px){
-  .vsend{padding:0 8px;font-size:.74rem}
-  .votp{flex-direction:column}
-  .votp .vgo{width:100%}
-}
 @media(prefers-reduced-motion:reduce){
-  .vsend,.vgo{transition:none}
+  .authcard .cta{transition:none}
 }
 </style>
 <p class="err"><?= e($err) ?></p>
 <div class="rgrid">
-<div class="cell"><?= fld(
+<div class="cell"><?= $wf(
     "Full name",
-    '<span class="material-icons mi">person</span>',
-    '<input name="name" value="' .
-        $v("name") .
-        '" placeholder="Your full name" autocomplete="name" required>',
+    "person_add",
+    $mi("person"),
+    '<input name="name" value="' . $v("name") . '" placeholder="Your full name" autocomplete="name" required>',
 ) ?></div>
-<?= $vcell(
-    "email",
+<div class="cell"><?= $wf(
     "Email address",
-    '<span class="material-icons mi">mail</span>',
-    '<input type="email" name="email" value="' .
-        $v("email") .
-        '" placeholder="you@example.com" autocomplete="email" required>',
-) ?>
-<?= $needPhone
-    ? $vcell("phone", "Phone number", $phoneIcon, $phoneInput)
-    : '<div class="cell">' . fld("Phone number", $phoneIcon, $phoneInput) . "</div>" ?>
-<div class="cell"><?= fld(
+    "mail",
+    $mi("mail"),
+    '<input type="email" name="email" value="' . $v("email") . '" placeholder="you@example.com" autocomplete="email" required>',
+) ?></div>
+<div class="cell"><?= $wf(
+    "Phone number",
+    "phone",
+    $mi("phone"),
+    '<input name="phone" value="' . $v("phone") . '" placeholder="10-digit mobile number" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" required>',
+) ?></div>
+<div class="cell"><?= $wf(
     "Joining as",
-    '<span class="material-icons mi">badge</span>',
+    "work",
+    $mi("work"),
     '<select name="role" id="role"><option value="customer"' .
         ($role == "customer" ? " selected" : "") .
         '>Customer</option><option value="worker"' .
         ($role == "worker" ? " selected" : "") .
         ">Worker</option></select>",
 ) ?></div>
-<div class="cell"><?= pwf("Password", "password", "Create a password", true, "new-password") ?></div>
-<div class="cell"><?= pwf(
+<div class="cell"><?= $wf(
+    "Password",
+    "lock",
+    $mi("lock"),
+    '<input type="password" name="password" placeholder="Create a password" autocomplete="new-password" required>',
+) ?></div>
+<div class="cell"><?= $wf(
     "Confirm password",
-    "password2",
-    "Type it again",
-    false,
-    "new-password",
+    "lock",
+    $mi("lock"),
+    '<input type="password" name="password2" placeholder="Type it again" autocomplete="new-password" required>',
 ) ?></div>
 <div class="cell" id="skillbox"<?= $role == "worker" ? "" : " hidden" ?>><?php
 $o = '<option value="">Skill (workers only)</option>';
 foreach ($CATS as $c) {
-    $o .=
-        "<option" .
-        (($_POST["skill"] ?? "") == $c ? " selected" : "") .
-        ">" .
-        e($c) .
-        "</option>";
+    $o .= "<option" . (($_POST["skill"] ?? "") == $c ? " selected" : "") . ">" . e($c) . "</option>";
 }
-echo fld(
-    "Your skill",
-    '<span class="material-icons mi">hardware</span>',
-    '<select name="skill">' . $o . "</select>",
-);
+echo $wf("Your skill", "hardware", $mi("hardware"), '<select name="skill">' . $o . "</select>");
 ?></div>
-<div class="cell ref"><?= fld(
+<div class="cell ref"><?= $wf(
     "Referral code (optional)",
+    "sell",
     "#",
-    '<input name="ref" value="' .
-        $v("ref") .
-        '" placeholder="Have a code? Enter it" autocomplete="off">',
+    '<input name="ref" value="' . $v("ref") . '" placeholder="Have a code? Enter it" autocomplete="off">',
 ) ?></div>
-<div class="full"><label class="chk"><input type="checkbox" name="terms" value="1" required><span><?= $kn
+<div class="full"><label class="tk"><input type="checkbox" name="terms" value="1" required><span class="box"></span><span><?= $kn
     ? 'ನಾನು Workonnect <a href="terms.php" target="_blank">ನಿಯಮಗಳು</a> ಮತ್ತು <a href="privacy.php" target="_blank">ಗೌಪ್ಯತಾ ನೀತಿ</a>ಯನ್ನು ಒಪ್ಪುತ್ತೇನೆ.'
     : 'I agree to the Workonnect <a href="terms.php" target="_blank">Terms</a> and <a href="privacy.php" target="_blank">Privacy Policy</a>.' ?></span></label></div>
-<div class="full"><button class="cta" data-busy="<?= e(
-    t("Creating…"),
-) ?>"><span>Create account</span><b class="go">→</b></button></div>
+<div class="full"><button class="cta" data-busy="<?= e(t("Creating…")) ?>"><b class="rk material-icons">rocket_launch</b><span>Create account</span><b class="go">→</b></button></div>
+<div class="full">
+  <div class="odv">or</div>
+  <a class="gbt" href="google_login.php?role=<?= e($role) ?>">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+    <span>Continue with Google</span>
+  </a>
 </div>
-<script>role.onchange=function(){skillbox.hidden=this.value!="worker"}</script>
+</div>
 <script>
-(function(){
-  var f=document.querySelector(".authcard"),tk=f.querySelector("input[name=csrf]"),cta=f.querySelector(".cta");
-  var PRE=<?= json_encode(["email" => $vEmail, "phone" => $vPhone], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-  var NEED=<?= json_encode($needPhone) ?>;
-  var V={email:false,phone:!NEED};
-  function norm(t,v){v=(v||"").trim();return t=="email"?v.toLowerCase():v}
-  function sync(){
-    var ok=V.email&&V.phone;
-    cta.disabled=!ok;
-    cta.title=ok?"":"Verify your email"+(NEED?" and phone":"")+" first";
-  }
-  function call(d){
-    var fd=new FormData();
-    for(var k in d)fd.append(k,d[k]);
-    fd.append("csrf",tk?tk.value:"");
-    return fetch("register_otp.php",{method:"POST",body:fd,credentials:"same-origin"}).then(function(r){return r.json()});
-  }
-  f.querySelectorAll(".vcell").forEach(function(c){
-    var t=c.dataset.vt,inp=c.querySelector(".fld input:not(.vcode)"),sb=c.querySelector(".vsend"),bd=c.querySelector(".vbadge"),
-        box=c.querySelector(".votp"),code=c.querySelector(".vcode"),go=c.querySelector(".vgo"),msg=c.querySelector(".vmsg"),timer=null;
-    function say(m,bad){msg.textContent=m||"";msg.className="vmsg"+(bad?" bad":"")}
-    function done(){V[t]=true;bd.hidden=false;sb.hidden=true;box.hidden=true;say("");sync()}
-    function undo(){clearTimeout(timer);V[t]=false;bd.hidden=true;sb.hidden=false;sb.disabled=false;sb.textContent="Send code";box.hidden=true;code.value="";say("");sync()}
-    function cool(n){clearTimeout(timer);(function tick(){if(n<=0){sb.disabled=false;sb.textContent="Resend code";return}sb.disabled=true;sb.textContent="Resend in "+n+"s";n--;timer=setTimeout(tick,1000)})()}
-    function fail(){say("Something went wrong. Refresh the page and try again.",1);sb.disabled=false;go.disabled=false}
-    inp.addEventListener("input",function(){if(V[t]||!box.hidden)undo()});
-    sb.onclick=function(){
-      var v=norm(t,inp.value);
-      if(!v||!inp.checkValidity()){say(t=="email"?"Enter a valid email address first.":"Enter a valid 10-digit phone number first.",1);inp.focus();return}
-      sb.disabled=true;say("Sending…");
-      call({act:"send",type:t,target:v}).then(function(r){
-        if(r.ok){box.hidden=false;code.value="";code.focus();say(r.msg);cool(r.wait||30)}
-        else{say(r.msg,1);if(r.wait)cool(r.wait);else sb.disabled=false}
-      }).catch(fail);
-    };
-    go.onclick=function(){
-      var cv=code.value.trim();
-      if(!/^[0-9]{6}$/.test(cv)){say("Enter the 6-digit code.",1);return}
-      go.disabled=true;
-      call({act:"verify",type:t,target:norm(t,inp.value),code:cv}).then(function(r){
-        go.disabled=false;
-        if(r.ok)done();else say(r.msg,1);
-      }).catch(fail);
-    };
-    code.addEventListener("input",function(){code.value=code.value.replace(/\D/g,"").slice(0,6)});
-    code.addEventListener("keydown",function(e){if(e.key=="Enter"){e.preventDefault();go.click()}});
-    if(PRE[t]&&PRE[t]===norm(t,inp.value))done();
-  });
-  sync();
-})();
+var r=document.getElementById("role"),s=document.getElementById("skillbox"),g=document.querySelector(".gbt");
+r.onchange=function(){
+  s.hidden=this.value!="worker";
+  g.href="google_login.php?role="+encodeURIComponent(this.value);
+};
 </script>
 <?php
-auth_close('Already have an account? <a href="login.php">Login</a>');
+auth_close('<div class="wksign"><i></i><span>Already have an account? <a href="login.php">Sign in</a> ›</span><i></i></div>');
 foot();
