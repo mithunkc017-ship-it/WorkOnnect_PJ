@@ -1,8 +1,9 @@
-<?php // WorkOnnect Assistant - OFFLINE chat endpoint. No external API: predefined replies + your own database tools.
+<?php // WorkOnnect Assistant - chat endpoint. Offline: predefined replies + your own database tools.
 require "config.php";
-need();
+if (!me()) { header("Content-Type: application/json"); http_response_code(401); echo json_encode(["error" => "Please log in again."]); exit; }
 $u = me();
 ini_set("display_errors", "0");
+if (date_default_timezone_get() === "UTC") date_default_timezone_set("Asia/Kolkata");
 header("Content-Type: application/json; charset=utf-8");
 header("Cache-Control: no-store");
 
@@ -37,6 +38,14 @@ function getworker($id) {
     global $pdo; $q = $pdo->prepare("SELECT * FROM users WHERE id=?"); $q->execute([$id]); $r = $q->fetch();
     return ($r && $r["role"] == "worker" && empty($r["banned"])) ? $r : null;
 }
+function has($m, $words) {   // plain words must start at a word boundary ("rupin" no longer matches "upi")
+    foreach ($words as $w) {
+        if (preg_match('/^[a-z0-9 .#]+$/i', $w)) { if (preg_match('/(?<![a-z])' . preg_quote($w, '/') . '/i', $m)) return true; }
+        elseif (mb_strpos($m, $w) !== false) return true;
+    }
+    return false;
+}
+function h24($h, $ap) { $h = (int) $h; if ($ap == "pm" && $h < 12) $h += 12; if ($ap == "am" && $h == 12) $h = 0; return $h; }
 
 /* ================= database tools ================= */
 function t_search_workers($a) {
@@ -83,7 +92,9 @@ function t_prepare_booking($a) {
     $cat = mb_substr((string) ($a["category"] ?? col($w, ["category", "skill", "service"]) ?? "Other"), 0, 40);
     $p = ["worker_id" => $wid, "worker" => $w["name"], "title" => $title, "category" => $cat, "details" => mb_substr((string) ($a["details"] ?? ""), 0, 500),
         "location" => mb_substr((string) ($a["location"] ?? col($w, ["location", "city", "area"]) ?? ""), 0, 120), "slot" => $slot];
-    $_SESSION["ai_pending"][$tok] = $p + ["uid" => $u["id"], "exp" => time() + 600];
+    $pend = array_filter($_SESSION["ai_pending"] ?? [], fn($x) => ($x["exp"] ?? 0) > time());   // drop expired tokens
+    $pend[$tok] = $p + ["uid" => $u["id"], "exp" => time() + 600];
+    $_SESSION["ai_pending"] = $pend;
     return ["_card" => ["type" => "confirm", "token" => $tok] + array_diff_key($p, ["worker_id" => 1])];
 }
 function t_get_my_bookings($a) {
@@ -167,19 +178,21 @@ $_SESSION["ai_rl"][] = $now;
 $action = $in["action"] ?? "chat";
 $L = ["en" => "en", "kn" => "kn", "hi" => "hi"][$in["lang"] ?? "en"] ?? "en";
 
-if ($action == "reset") { unset($_SESSION["ai_flow"], $_SESSION["ai_last"], $_SESSION["ai_ctx"]); out(["ok" => true]); }
+if ($action == "reset") { unset($_SESSION["ai_flow"], $_SESSION["ai_last"], $_SESSION["ai_ctx"], $_SESSION["ai_pending"]); out(["ok" => true]); }
 
 if ($action == "confirm_booking") {
     $tok = (string) ($in["token"] ?? ""); $p = $_SESSION["ai_pending"][$tok] ?? null;
     if ($role != "customer" || !$p || $p["uid"] != $u["id"] || $p["exp"] < time()) out(err("This confirmation expired. Please ask me to prepare the booking again."), 400);
     unset($_SESSION["ai_pending"][$tok]);
+    $jid = 0;
     try {
         if (!getworker($p["worker_id"])) out(err("This worker is no longer available."), 409);
         $pdo->beginTransaction();
         if (clash($pdo, $p["worker_id"], $p["slot"])) { $pdo->rollBack(); out(err("Sorry, that time was just taken. Please choose another time."), 409); }
-        $pdo->prepare("INSERT INTO jobs(customer_id,worker_id,title,category,location,amount,details,phone,slot,status,price,paid,confirmed,tip,urgent,refunded,escrow,commission,discount,settled,rem1,rem24,onway,photo,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-            ->execute([$u["id"], $p["worker_id"], $p["title"], $p["category"], $p["location"], "", $p["details"], $u["phone"] ?? "", $p["slot"], "requested", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", date("Y-m-d H:i:s")]);
-        $jid = 0; try { $jid = (int) $pdo->lastInsertId(); } catch (Throwable $e) {}
+        $vals = [$u["id"], $p["worker_id"], $p["title"], $p["category"], $p["location"], "", $p["details"], $u["phone"] ?? "", $p["slot"], "requested"];
+        $vals = array_merge($vals, array_fill(0, 13, 0), ["", date("Y-m-d H:i:s")]);   // price..onway = 0, photo = "", created
+        $pdo->prepare("INSERT INTO jobs(customer_id,worker_id,title,category,location,amount,details,phone,slot,status,price,paid,confirmed,tip,urgent,refunded,escrow,commission,discount,settled,rem1,rem24,onway,photo,created) VALUES(" . implode(",", array_fill(0, 25, "?")) . ")")->execute($vals);
+        try { $jid = (int) $pdo->lastInsertId(); } catch (Throwable $e) {}
         if (!$jid) { $f = $pdo->prepare("SELECT id FROM jobs WHERE customer_id=? AND worker_id=? ORDER BY id DESC LIMIT 1"); $f->execute([$u["id"], $p["worker_id"]]); $jid = (int) $f->fetchColumn(); }
         $pdo->commit();
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); error_log("ai booking: " . $e->getMessage()); out(err("The booking could not be saved. Nothing was created."), 500); }
@@ -193,14 +206,15 @@ if ($action == "confirm_booking") {
     out(["cards" => [["type" => "done", "job_id" => $jid, "title" => $p["title"], "worker" => $p["worker"], "slot" => $p["slot"]]], "reply" => $done, "chips" => ["Show my bookings", "Find a verified painter"]]);
 }
 
-/* ================= offline brain ================= */
+/* ================= brain ================= */
 $msg = trim(mb_substr((string) ($in["message"] ?? ""), 0, 600));
 if ($msg === "") out(err("Empty message."), 400);
 $m = mb_strtolower($msg);
 
-function has($m, $words) { foreach ($words as $w) if (mb_strpos($m, $w) !== false) return true; return false; }
+require __DIR__ . "/ai_brain_extra.php";   // extra FAQ, calculator, typo help, profile view, smart fallback
+$m = x_autocorrect($m);
 
-/* predefined replies: English / ಕನ್ನಡ / हिन्दी. Add your own entries here. */
+/* predefined replies: English / ಕನ್ನಡ / हिन्दी */
 function aitx($k, $a = []) {
     global $L;
     static $S = null;
@@ -212,7 +226,7 @@ function aitx($k, $a = []) {
         "found" => ["en" => "Top **%d** %s options, ranked by rating and jobs done ⭐", "kn" => "ರೇಟಿಂಗ್ ಮತ್ತು ಪೂರ್ಣಗೊಂಡ ಕೆಲಸಗಳ ಆಧಾರದ ಮೇಲೆ ಅತ್ಯುತ್ತಮ **%d** %s ಆಯ್ಕೆಗಳು ⭐", "hi" => "रेटिंग और पूरे किए गए काम के आधार पर शीर्ष **%d** %s विकल्प ⭐"],
         "none" => ["en" => "I couldn't find any %s workers right now. Try another area or service.", "kn" => "ಈಗ %s ಕೆಲಸಗಾರರು ಸಿಗಲಿಲ್ಲ. ಬೇರೆ ಪ್ರದೇಶ ಅಥವಾ ಸೇವೆ ಪ್ರಯತ್ನಿಸಿ.", "hi" => "अभी कोई %s वर्कर नहीं मिला। कोई दूसरा क्षेत्र या सेवा आज़माएँ।"],
         "ask_slot" => ["en" => "Great choice! **When** should **%s** come? Pick a time or type a date and time (e.g. *tomorrow 5 pm*).", "kn" => "ಒಳ್ಳೆಯ ಆಯ್ಕೆ! **%s** ಯಾವಾಗ ಬರಬೇಕು? ಸಮಯ ಆರಿಸಿ ಅಥವಾ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ ಟೈಪ್ ಮಾಡಿ (ಉದಾ: *tomorrow 5 pm*).", "hi" => "बढ़िया चुनाव! **%s** कब आएँ? समय चुनें या तारीख और समय लिखें (जैसे *tomorrow 5 pm*)।"],
-        "bad_slot" => ["en" => "I couldn't read that time. Try *tomorrow 10 am* or *2026-11-25 16:00*.", "kn" => "ಆ ಸಮಯ ಅರ್ಥವಾಗಲಿಲ್ಲ. *tomorrow 10 am* ಅಥವಾ *2026-11-25 16:00* ಎಂದು ಪ್ರಯತ್ನಿಸಿ.", "hi" => "वह समय समझ नहीं आया। *tomorrow 10 am* या *2026-11-25 16:00* जैसा लिखें।"],
+        "bad_slot" => ["en" => "I couldn't read that time (or it is already past). Try *tomorrow 10 am* or *2026-11-25 16:00*.", "kn" => "ಆ ಸಮಯ ಅರ್ಥವಾಗಲಿಲ್ಲ. *tomorrow 10 am* ಅಥವಾ *2026-11-25 16:00* ಎಂದು ಪ್ರಯತ್ನಿಸಿ.", "hi" => "वह समय समझ नहीं आया। *tomorrow 10 am* या *2026-11-25 16:00* जैसा लिखें।"],
         "ask_title" => ["en" => "Got it: **%s**. What work do you need done? (a few words, e.g. *fan not working*)", "kn" => "ಸರಿ: **%s**. ಯಾವ ಕೆಲಸ ಬೇಕು? (ಕೆಲವು ಪದಗಳಲ್ಲಿ, ಉದಾ: *fan not working*)", "hi" => "ठीक है: **%s**। कौन सा काम करवाना है? (कुछ शब्दों में, जैसे *fan not working*)"],
         "review" => ["en" => "Almost done! Review the details and press **Confirm booking** 👇", "kn" => "ಬಹುತೇಕ ಮುಗಿಯಿತು! ವಿವರ ಪರಿಶೀಲಿಸಿ **Confirm booking** ಒತ್ತಿ 👇", "hi" => "लगभग हो गया! विवरण जाँचें और **Confirm booking** दबाएँ 👇"],
         "cancelled" => ["en" => "No problem, I've stopped that. Anything else?", "kn" => "ಸರಿ, ನಿಲ್ಲಿಸಿದ್ದೇನೆ. ಇನ್ನೇನಾದರೂ?", "hi" => "कोई बात नहीं, रोक दिया। और कुछ?"],
@@ -244,9 +258,15 @@ function aitx($k, $a = []) {
 }
 
 /* service detection: your site's categories first, then synonyms (EN / ಕನ್ನಡ / हिन्दी) */
+function cat_in($m, $c) {
+    $c = mb_strtolower(trim((string) $c));
+    if ($c === "") return false;
+    if (preg_match('/^[a-z0-9 ]+$/', $c)) return (bool) preg_match('/(?<![a-z])' . preg_quote($c, '/') . '/i', $m);   // "ac" must not match "package"
+    return mb_stripos($m, $c) !== false;
+}
 function detect_cat($m) {
     global $CATS;
-    if (isset($CATS) && is_array($CATS)) foreach ($CATS as $c) if ($c !== "" && mb_stripos($m, mb_strtolower((string) $c)) !== false) return (string) $c;
+    if (isset($CATS) && is_array($CATS)) foreach ($CATS as $c) if (cat_in($m, $c)) return (string) $c;
     $SYN = [
         [["Electrician"], '/electric|wiring|\bswitch|\bfan\b|inverter|ಎಲೆಕ್ಟ್ರಿ|ವಿದ್ಯುತ್|इलेक्ट्री|बिजली/iu'],
         [["Plumber"], '/plumb|\bpipe|\btap\b|leak|bathroom|\btank\b|ಪ್ಲಂಬ|ನಲ್ಲಿ|प्लंबर|नल|पाइप/iu'],
@@ -265,16 +285,24 @@ function detect_cat($m) {
     }
     return null;
 }
+/* date/time reader: "tomorrow 5 pm", "fri 10:30", "2026-11-25 16:00", "6 pm" */
 function parse_slot($m) {
-    if (!preg_match('/\d{4}-\d{2}-\d{2}|today|tomorrow|\d{1,2}(:\d{2})?\s*(am|pm)|\d{1,2}:\d{2}|ಇಂದು|ನಾಳೆ|आज|कल|\b(mon|tue|wed|thu|fri|sat|sun)/iu', $m)) return null;
     $m = str_ireplace(["ಇಂದು", "ನಾಳೆ", "आज", "कल"], ["today", "tomorrow", "today", "tomorrow"], $m);
-    $m = preg_replace('/\b(at|on|for|by|around|please|book)\b/i', " ", $m);
-    $ts = strtotime($m);
+    $d = null; $t = null; $inferred = false;
+    if (preg_match('/\d{4}-\d{2}-\d{2}/', $m, $x)) $d = $x[0];
+    elseif (preg_match('/\btoday\b/i', $m)) $d = "today";
+    elseif (preg_match('/\btomorrow\b/i', $m)) $d = "tomorrow";
+    elseif (preg_match('/\b(mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?|sun)(?:day)?\b/i', $m, $x)) $d = "next " . $x[1];
+    if (preg_match('/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i', $m, $x)) $t = sprintf("%02d:%02d", h24($x[1], strtolower($x[3])), (int) ($x[2] ?: 0));
+    elseif (preg_match('/\b([01]?\d|2[0-3]):([0-5]\d)\b/', $m, $x)) $t = sprintf("%02d:%s", $x[1], $x[2]);
+    if (!$d && !$t) return null;
+    if (!$t) $t = "10:00";
+    if (!$d) { $d = "today"; $inferred = true; }
+    $ts = strtotime("$d $t");
     if (!$ts) return null;
-    if ($ts < time() + 1800 && !preg_match('/\d{4}-\d{2}-\d{2}/', $m)) $ts += 86400;
+    if ($inferred && $ts < time() + 1800) $ts += 86400;
     return $ts >= time() + 1800 ? date("Y-m-d H:i", $ts) : null;
 }
-function h24($h, $ap) { $h = (int) $h; if ($ap == "pm" && $h < 12) $h += 12; if ($ap == "am" && $h == 12) $h = 0; return $h; }
 
 function cat_chips() { return ["Electrician", "Plumber", "Painter", "Carpenter", "Cleaner", "AC Technician"]; }
 function slot_chips() { return ["Today 6 PM", "Tomorrow 10 AM", "Tomorrow 5 PM", "Not now"]; }
@@ -289,18 +317,27 @@ $flow = $_SESSION["ai_flow"] ?? null;
 $ctx = $_SESSION["ai_ctx"] ?? [];
 $cancelWords = ["not now", "cancel this", "never mind", "start over", "ಬೇಡ", "रहने दो", "छोड़ो"];
 
-/* 1. an active booking flow always gets the message first (so a job title can't trigger an FAQ by accident) */
+/* 1. an active booking flow gets the message first (so a job title can't trigger an FAQ by accident) */
 if ($flow && $role == "customer") {
     if (has($m, $cancelWords)) { unset($_SESSION["ai_flow"]); reply(aitx("cancelled"), [], menu_chips("customer")); }
-    if (($flow["step"] ?? "") == "slot") {
+    // a clear new command leaves the flow
+    if (preg_match('/^(show (my|profile)|cancel booking|track booking|book worker|i want to book|find )/i', $msg)) { unset($_SESSION["ai_flow"]); $flow = null; }
+}
+if ($flow && $role == "customer") {
+    $step = $flow["step"] ?? "";
+    if ($step == "slot") {
         $s = parse_slot($m);
         if ($s) {
+            $sl = str_replace(" ", "T", $s); $w = getworker($flow["wid"]);
+            if (!$w) { unset($_SESSION["ai_flow"]); reply("This worker is no longer available. Let's find another one.", [], cat_chips()); }
+            if (!works(wfix($w), $sl)) reply("This worker doesn't work at that day/time. Please choose another time.", [], slot_chips());
+            if (clash($pdo, $w["id"], $sl)) reply("This worker already has a job around that time. Please choose another time.", [], slot_chips());
             $flow["slot"] = $s; $flow["step"] = "title"; $_SESSION["ai_flow"] = $flow;
             reply(aitx("ask_title", [date("D, d M · h:i A", strtotime($s))]), [], [($flow["category"] ?: "General") . " service", "Repair work", "Installation", "Not now"]);
         }
         if (!detect_cat($m) && !has($m, ["find", "show", "booking", "status", "help", "how "])) reply(aitx("bad_slot"), [], slot_chips());
-        unset($_SESSION["ai_flow"]); $flow = null;           // the person changed topic
-    } elseif (($flow["step"] ?? "") == "title") {
+        unset($_SESSION["ai_flow"]); $flow = null;   // the person changed topic
+    } elseif ($step == "title") {
         [$r, $c] = run("prepare_booking", ["worker_id" => $flow["wid"], "title" => mb_substr($msg, 0, 80), "details" => $msg, "category" => $flow["category"] ?: null, "slot" => $flow["slot"], "location" => $ctx["location"] ?? null]);
         if (isset($r["error"])) {
             $e = (string) $r["error"];
@@ -309,15 +346,16 @@ if ($flow && $role == "customer") {
         }
         $flow["step"] = "confirm"; $_SESSION["ai_flow"] = $flow;
         reply(aitx("review"), [$c], []);
+    } elseif ($step == "confirm" && has($m, ["confirm", "yes", "ok", "book it"])) {
+        reply("Please press the **Confirm booking** button on the card above 👆", [], ["Not now"]);
     }
 }
+if (!$flow && has($m, ["not now"]) && mb_strlen($m) < 12) reply(aitx("cancelled"), [], menu_chips($role));
 
-/* 2. small talk + FAQ (all roles) */
-if (preg_match('/^(hi|hello|hey|namaste|namaskara|good (morning|afternoon|evening))\b|^(ನಮಸ್ಕಾರ|ಹಲೋ|नमस्ते|हाय)/iu', $m)) reply(aitx("hello", [$first]), [], menu_chips($role));
+/* 2. small talk, time, developers */
+if (mb_strlen($m) < 25 && preg_match('/^(hi|hello|hey|namaste|namaskara|good (morning|afternoon|evening))\b|^(ನಮಸ್ಕಾರ|ಹಲೋ|नमस्ते|हाय)/iu', $m)) reply(aitx("hello", [$first]), [], menu_chips($role));
 if (preg_match('/^(thanks|thank you|thx|ok thanks|ಧನ್ಯವಾದ|शुक्रिया|धन्यवाद)/iu', $m)) reply(aitx("bye"), [], menu_chips($role));
-/* time & date: the card shows the live time from the person's own device */
 if (preg_match('/\b(time now|current time|current date|what(\'s| is)? the (time|date|day)|what time|what date|what day|today\'?s date|date today|day today|tell me the (time|date)|time please|date please)\b|ಸಮಯ ಎಷ್ಟು|ಈಗ ಸಮಯ|ಇಂದಿನ ದಿನಾಂಕ|ಇಂದು ಯಾವ ದಿನ|ದಿನಾಂಕ ಎಷ್ಟು|कितने बजे|समय क्या|आज की तारीख|आज कौन सा दिन|तारीख क्या/iu', $m)) reply(aitx("clock"), [["type" => "clock"]], menu_chips($role));
-/* developers: show photos + names (put photos in the /team folder: mithun.jpg, pavan.jpg, sachin.jpg, yashwanth.jpg) */
 if (has($m, ["developer", "developed", "who made", "who built", "who created", "who develop", "created this", "made this", "your team", "our team", "about team", "ಡೆವಲಪರ್", "ಅಭಿವೃದ್ಧಿ", "डेवलपर", "किसने बनाया", "किसने बनाई"])) {
     $items = [];
     foreach ([["Mithun K C", "mithun"], ["Pavan S K", "pavan"], ["Sachin M", "sachin"], ["Yashwanth P", "yashwanth"]] as $d) {
@@ -327,6 +365,32 @@ if (has($m, ["developer", "developed", "who made", "who built", "who created", "
     }
     reply(aitx("dev"), [["type" => "team", "items" => $items]], menu_chips($role));
 }
+
+/* 3. customer commands with a number (run before the FAQ so a worker's name can never trigger an FAQ) */
+if ($role == "customer") {
+    if (has($m, ["cancel"]) && preg_match('/(?:#|booking\s*|job\s*)(\d{1,9})/i', $m, $x)) {
+        [$r, $c] = run("prepare_cancel", ["job_id" => (int) $x[1]]);
+        if (isset($r["error"])) reply($r["error"], [], ["Show my bookings"]);
+        reply("Review the cancellation below. " . ($r["fee"] ? "⚠️ A fee of **₹{$r["fee"]}** applies." : "✅ No cancellation fee applies."), [$c], ["Show my bookings"]);
+    }
+    if (has($m, ["status", "track"]) && preg_match('/(?:#|booking\s*|job\s*)(\d{1,9})/i', $m, $x)) {
+        [$r, $c] = run("get_booking_status", ["job_id" => (int) $x[1]]);
+        if (isset($r["error"])) reply($r["error"], [], ["Show my bookings"]);
+        reply("Latest on booking **#" . $x[1] . "** 📦", [$c], ["Show my bookings", "Cancel booking #" . $x[1]]);
+    }
+    x_profile_view();
+    if (has($m, ["book", "hire", "ಬುಕ್", "बुक"]) && !has($m, ["cancel", "status", "track"]) && preg_match('/(?:worker\s*#?\s*|#\s*)(\d)\b/i', $m, $x)) {
+        $idx = (int) $x[1]; $id = (int) ($_SESSION["ai_last"][$idx - 1] ?? 0); $w = $id ? getworker($id) : null;
+        if (!$w) reply(aitx("pick_first"), [], cat_chips());
+        $_SESSION["ai_flow"] = ["step" => "slot", "wid" => $id, "category" => (string) (col($w, ["category", "skill", "service"]) ?? ($ctx["category"] ?? ""))];
+        reply(aitx("ask_slot", [$w["name"]]), [], slot_chips());
+    }
+}
+
+/* 4. extra FAQ, calculator, jokes (all roles) */
+x_faq();
+
+/* 5. core FAQ */
 if (has($m, ["how does", "how it works", "what is workonnect", "how do i use", "ಹೇಗೆ ಕೆಲಸ", "कैसे काम"])) reply(aitx("how"), [], menu_chips($role));
 if (has($m, ["cancellation", "cancel policy", "cancel fee", "ರದ್ದು ಶುಲ್ಕ", "रद्द शुल्क"]) || ($role == "customer" && has($m, ["cancel"]) && !preg_match('/\d/', $m))) reply(aitx("policy"), [], ["Show my bookings"]);
 if (has($m, ["wallet", "referral", "refer ", "ವಾಲೆಟ್", "वॉलेट", "रेफ़रल"])) reply(aitx("wallet"), [], menu_chips($role));
@@ -335,7 +399,7 @@ if (has($m, ["safe", "trust", "verified mean", "secure", "ಸುರಕ್ಷ", "
 if (has($m, ["help", "what can you do", "menu", "ಸಹಾಯ", "मदद"])) reply(aitx("unknown"), [], menu_chips($role));
 
 /* ================= ADMIN ================= */
-if ($role == "admin") reply(aitx("unknown"), [], menu_chips("admin"));
+if ($role == "admin") x_fallback();
 
 /* ================= WORKER ================= */
 if ($role == "worker") {
@@ -376,35 +440,15 @@ if ($role == "worker") {
         $lines = []; foreach ($r["missing"] as $k) $lines[] = "• " . ucfirst($tips[$k] ?? $k);
         reply($lines ? "Complete these to get more bookings:\n" . implode("\n", $lines) : "Your profile looks complete 🎉 Keep your availability up to date and reply quickly to requests.", [$c], ["Set availability Mon-Sat 9am to 6pm", "Show my new job requests"]);
     }
-    if (has($m, ["job", "request", "booking", "work", "order", "ಕೆಲಸ", "काम", "बुकिंग"])) {
+    if (has($m, ["job", "request", "booking", "order", "ಕೆಲಸ", "काम", "बुकिंग"])) {
         $st = has($m, ["new", "pending", "request"]) ? "requested" : (has($m, ["complete", "done", "finished"]) ? "completed" : (has($m, ["progress", "ongoing", "upcoming"]) ? "in_progress" : null));
         [$r, $c] = run("get_worker_jobs", ["status" => $st]);
         reply($r["n"] ? "📋 Your " . ($st ? str_replace("_", " ", $st) . " " : "") . "jobs. Tap a status to open the job:" : "No jobs here yet. Keep your availability on and profile complete to receive requests ✨", [$c], ["Show my new job requests", "Completed jobs", "How much did I earn this month?"]);
     }
-    reply(aitx("unknown"), [], menu_chips("worker"));
+    x_fallback();
 }
 
 /* ================= CUSTOMER ================= */
-/* cancel / status of a numbered booking */
-if (has($m, ["cancel"]) && preg_match('/#?(\d{1,9})/', $m, $x)) {
-    [$r, $c] = run("prepare_cancel", ["job_id" => (int) $x[1]]);
-    if (isset($r["error"])) reply($r["error"], [], ["Show my bookings"]);
-    reply("Review the cancellation below. " . ($r["fee"] ? "⚠️ A fee of **₹{$r["fee"]}** applies." : "✅ No cancellation fee applies."), [$c], ["Show my bookings"]);
-}
-if (has($m, ["status", "track", "where is"]) && preg_match('/#?(\d{1,9})/', $m, $x)) {
-    [$r, $c] = run("get_booking_status", ["job_id" => (int) $x[1]]);
-    if (isset($r["error"])) reply($r["error"], [], ["Show my bookings"]);
-    reply("Latest on booking **#" . $x[1] . "** 📦", [$c], ["Show my bookings", "Cancel booking #" . $x[1]]);
-}
-
-/* start booking: "book worker #2" */
-if (has($m, ["book", "hire", "ಬುಕ್", "बुक"]) && preg_match('/(?:worker\s*#?|#|book\s+|no\.?\s*)(\d)\b/i', $m, $x)) {
-    $idx = (int) $x[1]; $id = (int) ($_SESSION["ai_last"][$idx - 1] ?? 0); $w = $id ? getworker($id) : null;
-    if (!$w) reply(aitx("pick_first"), [], cat_chips());
-    $_SESSION["ai_flow"] = ["step" => "slot", "wid" => $id, "category" => (string) (col($w, ["category", "skill", "service"]) ?? ($ctx["category"] ?? ""))];
-    reply(aitx("ask_slot", [$w["name"]]), [], slot_chips());
-}
-
 /* my bookings */
 if (has($m, ["my booking", "bookings", "my order", "my job", "my request", "ಬುಕಿಂಗ್", "बुकिंग", "मेरी बुक"])) {
     [$r, $c] = run("get_my_bookings");
@@ -413,7 +457,7 @@ if (has($m, ["my booking", "bookings", "my order", "my job", "my request", "ಬ�
 
 /* price estimate */
 $cat = detect_cat($m);
-if (has($m, ["price", "cost", "estimate", "how much", "rate", "charge", "fee", "ಬೆಲೆ", "ಎಷ್ಟು", "कीमत", "भाव", "खर्च", "कितना"])) {
+if (has($m, ["price", "cost", "estimate", "how much", "charge", "fee", "ಬೆಲೆ", "ಎಷ್ಟು", "कीमत", "भाव", "खर्च", "कितना"]) || preg_match('/\brates?\b/i', $m)) {
     $cat = $cat ?: ($ctx["category"] ?? null);
     if (!$cat) reply(aitx("ask_cat"), [], cat_chips());
     [$r, $c] = run("estimate_service_price", ["category" => $cat]);
@@ -426,18 +470,21 @@ if (has($m, ["price", "cost", "estimate", "how much", "rate", "charge", "fee", "
 $wantsFind = has($m, ["find", "search", "show", "need", "want", "looking", "near me", "nearby", "available", "worker", "verified", "best", "top", "ಬೇಕು", "ಹುಡುಕ", "चाहिए", "ढूँढ", "खोज"]);
 if ($cat || ($wantsFind && !has($m, ["booking"]))) {
     $verified = has($m, ["verified", "trusted", "ಪರಿಶೀಲಿತ", "वेरिफाइड", "सत्यापित"]);
+    if (!$cat && $role == "customer") x_name_search();
+    if (!$cat && ($s = x_typo($m))) reply(xt("typo", [$s]), [], ["Find " . $s, "Estimate price for " . $s]);
     $cat = $cat ?: ($ctx["category"] ?? null);
     if (!$cat) reply(aitx("ask_cat"), [], cat_chips());
     $loc = null;
-    if (preg_match('/\b(?:in|near|around)\s+([a-z][a-z .]{2,24}?)(?:\s+(?:for|with|today|tomorrow|please|who|that)\b|[?.!,]|$)/i', $msg, $x) && !preg_match('/^(me|my|here|the|a)\b/i', trim($x[1]))) $loc = trim($x[1]);
+    if (preg_match('/\b(?:in|near|around)\s+([a-z][a-z .]{2,24}?)(?:\s+(?:for|with|today|tomorrow|please|who|that|at|on|after|before|by)\b|[?.!,\d]|$)/i', $msg, $x) && !preg_match('/^(me|my|here|the|a)\b/i', trim($x[1]))) $loc = trim($x[1]);
     $slot = parse_slot($m);
     [$r, $c] = run("search_workers", ["category" => $cat, "location" => $loc, "verified_only" => $verified, "slot" => $slot]);
     $ctx = ["category" => $cat, "location" => $loc]; $_SESSION["ai_ctx"] = $ctx;
     if (!$r["count"]) reply(aitx("none", [$cat]), [], array_merge(["Find " . $cat . " (any area)"], array_slice(cat_chips(), 0, 3)));
     $chips = []; foreach ($r["workers"] as $w) { if (count($chips) < 3) $chips[] = "Book worker #" . $w["index"] . " (" . explode(" ", $w["name"])[0] . ")"; }
+    $chips[] = "Show profile #1";
     if (!$verified) $chips[] = "Only verified " . $cat;
     $chips[] = "Estimate price for " . $cat;
-    reply(aitx("found", [$r["count"], $cat]) . ($loc ? " 📍 $loc" : "") . ($verified ? " ✔ verified only" : ""), [$c], $chips);
+    reply(aitx("found", [$r["count"], $cat]) . ($loc ? " 📍 $loc" : "") . ($verified ? " ✔ verified only" : "") . "\n\n" . x_top_lines($r["workers"]) . "\n\n" . xt("found_tip"), [$c], $chips);
 }
 
-reply(aitx("unknown"), [], menu_chips("customer"));
+x_fallback();
