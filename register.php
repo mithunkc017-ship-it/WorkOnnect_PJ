@@ -1,4 +1,4 @@
-<?php // Create account (customer or worker) - two-column card, e-mail + phone codes verified on this page, confirm password, strength meter and terms
+<?php // Create account (customer or worker) - compact two-column card, e-mail + phone codes verified on this page
 require "config.php";
 $err = "";
 $v = function ($k) {
@@ -87,53 +87,73 @@ auth_open(
 );
 ?>
 <style>
-.authcard{max-width:780px!important;width:100%!important}
-.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;align-items:start}
+/* smaller card */
+.authcard{max-width:620px!important;width:100%!important;padding:20px 24px!important;font-size:.9rem}
+.authcard h1,.authcard h2{font-size:1.35rem!important;margin:0 0 4px!important}
+.authcard p{margin-top:0}
+
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}
 .rgrid .cell{min-width:0}
 .rgrid .full{grid-column:1/-1}
 #skillbox[hidden]+.ref{grid-column:1/-1}
+
+/* compact fields */
+.rgrid .fld{margin-bottom:8px!important}
+.rgrid .fld input,.rgrid .fld select{font-size:.88rem!important;padding-top:8px!important;padding-bottom:8px!important;min-height:0!important}
+.rgrid .fld label,.rgrid label.lbl{font-size:.8rem!important}
+.rgrid .mi{font-size:18px!important}
 
 /* field with inline button */
 .vcell .fld{display:flex;align-items:center}
 .vcell .fld input{flex:1;min-width:0}
 
-/* small Send code / Verify buttons only (Create account keeps the original .cta design) */
+/* small Send code / Verify buttons */
 .vsend,.vgo{
   -webkit-appearance:none;appearance:none;border:0;cursor:pointer;
   font-family:inherit;font-weight:600;color:#fff;background:#1a6b7c;
-  flex:none;border-radius:10px;padding:0 14px;height:36px;margin-right:6px;font-size:.85rem;white-space:nowrap;
+  flex:none;border-radius:8px;padding:0 10px;height:30px;margin-right:6px;font-size:.78rem;white-space:nowrap;
   transition:transform .12s ease,filter .15s ease;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .vsend:hover:not(:disabled),.vgo:hover:not(:disabled){filter:brightness(1.1)}
 .vsend:active:not(:disabled),.vgo:active:not(:disabled){transform:scale(.97)}
 .vsend:disabled,.vgo:disabled{opacity:.55;cursor:not-allowed}
 .authcard .cta:disabled{opacity:.55;cursor:not-allowed}
+.authcard .cta{min-height:42px!important;font-size:.95rem!important}
 
 /* verified badge */
-.vbadge{flex:none;display:inline-flex;align-items:center;gap:4px;color:#2e9e5b;font-weight:600;font-size:.85rem;padding:4px 10px;margin-right:6px;border-radius:999px;background:rgba(46,158,91,.12);white-space:nowrap}
-.vbadge .mi{font-size:18px}
+.vbadge{flex:none;display:inline-flex;align-items:center;gap:3px;color:#2e9e5b;font-weight:600;font-size:.78rem;padding:3px 8px;margin-right:6px;border-radius:999px;background:rgba(46,158,91,.12);white-space:nowrap}
+.vbadge .mi{font-size:16px!important}
 
 /* code row */
-.votp{display:flex;gap:8px;margin-top:8px}
-.votp .vcode{flex:1;min-width:0;height:44px;letter-spacing:.35em;text-align:center;font-family:ui-monospace,Consolas,monospace;font-size:1.05rem;padding:0 10px;border:1px solid rgba(128,128,128,.4);border-radius:10px;background:transparent;color:inherit}
+.votp{display:flex;gap:6px;margin-top:4px}
+.votp .vcode{flex:1;min-width:0;height:36px;letter-spacing:.3em;text-align:center;font-family:ui-monospace,Consolas,monospace;font-size:.95rem;padding:0 8px;border:1px solid rgba(128,128,128,.4);border-radius:8px;background:transparent;color:inherit}
 .votp .vcode:focus{outline:0;border-color:#1a6b7c;box-shadow:0 0 0 3px rgba(26,107,124,.22)}
-.votp .vgo{margin-right:0;height:44px;padding:0 20px}
-.vmsg{display:block;min-height:1.2em;margin:4px 0 8px;font-size:.82rem;opacity:.85}
+.votp .vgo{margin-right:0;height:36px;padding:0 14px}
+.vmsg{display:block;min-height:1em;margin:2px 0 6px;font-size:.76rem;opacity:.85}
 .vmsg.bad{color:#d64545;opacity:1}
 .votp[hidden],.vbadge[hidden],.vsend[hidden]{display:none!important}
 
-/* small terms / privacy tick box */
-.authcard .chk{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;line-height:1.4;margin:6px 0}
-.authcard .chk input[type=checkbox]{width:14px;height:14px;min-width:14px;margin:2px 0 0;flex:none}
+/* tiny terms / privacy tick box */
+.authcard .chk{display:flex!important;align-items:flex-start;gap:7px;font-size:.76rem!important;line-height:1.35;margin:4px 0 10px!important}
+.authcard .chk input[type=checkbox]{
+  -webkit-appearance:none;appearance:none;box-sizing:border-box;
+  width:14px!important;height:14px!important;min-width:14px!important;max-width:14px!important;
+  padding:0!important;margin:1px 0 0!important;flex:none;
+  border:1.5px solid #8a8f98;border-radius:3px;background:transparent;
+  position:relative;cursor:pointer}
+.authcard .chk input[type=checkbox]:checked{background:#1a6b7c;border-color:#1a6b7c}
+.authcard .chk input[type=checkbox]:checked::after{
+  content:"";position:absolute;left:3px;top:0;width:3px;height:7px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.authcard .chk input[type=checkbox]:focus-visible{outline:2px solid rgba(26,107,124,.45);outline-offset:2px}
 
 /* tablet / mobile */
 @media(max-width:700px){
-  .rgrid{grid-template-columns:1fr;gap:2px}
-  .vsend,.vgo{height:40px}
-  .votp .vcode,.votp .vgo{height:48px}
+  .authcard{padding:16px 16px!important}
+  .rgrid{grid-template-columns:1fr}
 }
 @media(max-width:380px){
-  .vsend{padding:0 10px;font-size:.8rem}
+  .vsend{padding:0 8px;font-size:.74rem}
   .votp{flex-direction:column}
   .votp .vgo{width:100%}
 }
