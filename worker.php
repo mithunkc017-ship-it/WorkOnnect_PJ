@@ -34,17 +34,16 @@ if ($u && $u["role"] == "customer") {
 ob_start();
 head($w["name"]);
 $pageHead = ob_get_clean();
+
+// Remove the top menu buttons for everyone (logged in or not) and keep only the logo
 $pageHead = preg_replace(
-    '#<nav>.*?</nav>#s',
+    '#<nav\b[^>]*>.*?</nav>#s',
     '<nav aria-label="Page header"><a class="logo" href="index.php">Work<span>onnect</span></a></nav>',
     $pageHead,
-    1,
-    $navReplaced,
+    1
 );
-if ($navReplaced !== 1) {
-    throw new RuntimeException("Could not simplify the Worker Profile page header.");
-}
 echo $pageHead;
+
 $wkInitial = function_exists("mb_substr")
     ? mb_strtoupper(mb_substr((string) $w["name"], 0, 1))
     : strtoupper(substr((string) $w["name"], 0, 1));
