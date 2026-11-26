@@ -44,227 +44,267 @@ head("Smart Match");
 echo d_top("match.php");
 ?>
 <style>
-/* ===== Smart Match – scoped to .mt ===== */
-.mt{--m-a:#4f46e5;--m-b:#00a8ff;--m-g:#12b76a;--ease:cubic-bezier(.2,.8,.2,1);
-  position:relative;isolation:isolate;overflow:hidden;padding:22px;border-radius:22px;
-  background:linear-gradient(160deg,#eef0ff 0%,#e8f6ff 55%,#f1fbff 100%);
-  border:1px solid #dfe5fb;animation:mFade .6s var(--ease) both}
-.mt *{box-sizing:border-box}
-@keyframes mFade{from{opacity:0}to{opacity:1}}
+/* ===== Smart Match, right-side content only (scoped to .mm) ===== */
+.mm{--ac:#2563eb;--ac2:#1d4ed8;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--bg:#fff;--soft:#eff5ff;--page:#f1f5f9;--ok:#16a34a;--bad:#dc2626;
+  max-width:880px;margin:0 auto;padding:8px 4px 40px;color:var(--ink)}
+@media (prefers-color-scheme:dark){.mm{--ink:#e5e7eb;--mute:#9ca3af;--line:#334155;--bg:#1e293b;--soft:#172554;--page:#0f172a}}
+.mm *{box-sizing:border-box}
+.mm .material-icons{font-size:18px;vertical-align:middle}
 
-/* ---- AI neural-network background (inline SVG, no external images) ---- */
-.mt-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-.mt-bg svg{position:absolute;inset:0;width:100%;height:100%}
-.mt-bg .ln{stroke:#4f46e5;stroke-opacity:.16;stroke-width:1;stroke-dasharray:4 6;animation:mDash 14s linear infinite}
-.mt-bg .nd{fill:#4f46e5;fill-opacity:.35;transform-box:fill-box;transform-origin:center;animation:mNode 3.6s ease-in-out infinite}
-.mt-bg .nd.b{fill:#00a8ff}
-.mt-bg .nd:nth-of-type(2n){animation-delay:-1.2s}.mt-bg .nd:nth-of-type(3n){animation-delay:-2.4s}
-.mt-bg .orb{position:absolute;border-radius:50%;filter:blur(40px);opacity:.55;animation:mOrb 12s ease-in-out infinite}
-.mt-bg .o1{width:260px;height:260px;right:-60px;top:-80px;background:#9aa6ff}
-.mt-bg .o2{width:220px;height:220px;left:-60px;bottom:-70px;background:#7fd6ff;animation-delay:-6s}
-@keyframes mDash{to{stroke-dashoffset:-200}}
-@keyframes mNode{0%,100%{transform:scale(1);fill-opacity:.3}50%{transform:scale(1.8);fill-opacity:.7}}
-@keyframes mOrb{0%,100%{transform:translate(0,0)}50%{transform:translate(24px,18px)}}
 
-/* ---- ICONS: small & consistent ---- */
-.mt .material-icons{font-size:16px !important;line-height:1;vertical-align:-3px}
-.mt .mi-xs{font-size:14px !important;color:#f5a300;vertical-align:-2px;display:inline-block;animation:mStar 3s ease-in-out infinite}
+.mm-hero{background:linear-gradient(135deg,#1d4ed8,#2563eb 60%,#3b82f6);color:#fff;border-radius:24px;padding:28px 24px 24px;
+  position:relative;animation:mm-up .5s ease both}
+.mm-hbg{position:absolute;inset:0;border-radius:24px;overflow:hidden;pointer-events:none}
+.mm-hbg::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:skewX(-20deg);animation:mm-shine 5s ease-in-out infinite}
+@keyframes mm-shine{0%{left:-60%}60%,100%{left:140%}}
+.mm-hero>*{position:relative}
+.mm-ttl{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.mm-ic{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;position:relative}
+.mm-ic::after{content:"";position:absolute;inset:0;border-radius:16px;border:2px solid rgba(255,255,255,.6);animation:mm-ring 2.2s ease-out infinite}
+@keyframes mm-ring{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+.mm-ic .material-icons{font-size:28px}
+.mm-ttl h1{margin:0;font-size:clamp(1.3rem,3.4vw,1.8rem);letter-spacing:-.02em;color:#fff}
+.mm-ttl p{margin:2px 0 0;opacity:.9;font-size:14px;color:#fff}
 
-/* Title */
-.mt-title{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:20px;line-height:1.2;
-  animation:mDrop .6s var(--ease) both}
-.mt-title .mi{position:relative;flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;
-  font-size:18px !important;vertical-align:baseline;
-  background:linear-gradient(135deg,var(--m-a),var(--m-b));box-shadow:0 6px 14px rgba(79,70,229,.3)}
-.mt-title .mi::after{content:"";position:absolute;inset:0;border-radius:11px;border:2px solid var(--m-b);animation:mRadar 2.2s ease-out infinite}
+.mm-form{display:flex;gap:10px;flex-wrap:wrap;margin:0;padding:0;background:none;box-shadow:none}
+.mm-sel{position:relative;flex:1 1 220px}
+.mm-sel>.material-icons{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ac);pointer-events:none}
+.mm-sel select{width:100%;height:50px;margin:0;padding:0 14px 0 44px;border:0;border-radius:14px;font:inherit;font-size:15px;font-weight:600;color:#0f172a;
+  background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.16);cursor:pointer;outline:0}
+.mm-sel select:focus{box-shadow:0 0 0 4px rgba(255,255,255,.4),0 8px 20px rgba(0,0,0,.16)}
+.mm-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;margin:0;padding:0 22px;border:0;border-radius:14px;
+  font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s;width:auto}
+.mm-btn.pri{background:#fff;color:var(--ac2);box-shadow:0 8px 20px rgba(0,0,0,.16)}
+.mm-btn.pri:hover{background:#fff;transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.22)}
+.mm-btn.loc{background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.55);box-shadow:none}
+.mm-btn.loc:hover{background:rgba(255,255,255,.3);transform:translateY(-2px)}
+.mm-btn:active{transform:scale(.97)}
 
-/* Search form */
-.mt form.mt-form{padding:14px;border-radius:16px;background:linear-gradient(120deg,#4f46e5,#6d5efc,#00a8ff,#4f46e5);background-size:300% 300%;
-  box-shadow:0 12px 26px rgba(79,70,229,.28);animation:mRise .7s .05s var(--ease) both,mFlow 10s ease infinite}
-.mt-form select{flex:1 1 200px;padding:11px 13px;border-radius:11px;border:2px solid transparent;background:rgba(255,255,255,.96);color:#222;font-size:14.5px;
-  transition:border-color .25s,box-shadow .25s,transform .25s}
-.mt-form select:focus{outline:none;border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35);transform:translateY(-1px)}
-.mt-form button{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;padding:11px 18px;border:0;border-radius:11px;cursor:pointer;
-  font-weight:700;font-size:14px;background:#fff;color:var(--m-a);transition:transform .2s,box-shadow .2s}
-.mt-form button:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.22)}
-.mt-form button:active{transform:scale(.97)}
-.mt-form button .mi{transition:transform .3s}
-.mt-form button:hover .mi{transform:scale(1.2) rotate(-10deg)}
-.mt-form button.busy::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;
-  border:2px solid var(--m-a);border-top-color:transparent;animation:mSpin .7s linear infinite}
-.m-ripple{position:absolute;border-radius:50%;background:rgba(79,70,229,.35);transform:scale(0);animation:mRipple .6s linear;pointer-events:none}
+.mm-btn.busy{pointer-events:none;opacity:.85}
+.mm-btn.busy .material-icons{animation:mm-spin .8s linear infinite}
+@keyframes mm-spin{to{transform:rotate(360deg)}}
+.mm-lstat{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;opacity:.95;min-height:20px;color:#fff}
+.mm-lstat .material-icons{font-size:17px}
+.mm-lstat.err{color:#fecaca}
 
-/* Result cards */
-.mt .grid{margin-top:16px}
-.mt .grid>.card{position:relative;overflow:hidden;border-radius:18px;padding-top:16px;background:rgba(255,255,255,.92);
-  backdrop-filter:blur(4px);animation:mRise .7s var(--ease) both;transition:transform .3s var(--ease),box-shadow .3s}
-.mt .grid>.card:nth-child(1){animation-delay:.1s}.mt .grid>.card:nth-child(2){animation-delay:.2s}
-.mt .grid>.card:nth-child(3){animation-delay:.3s}.mt .grid>.card:nth-child(4){animation-delay:.4s}
-.mt .grid>.card:nth-child(5){animation-delay:.5s}
-.mt .grid>.card:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(79,70,229,.2)}
-.mt .grid>.card::before{content:"";position:absolute;left:0;top:0;width:100%;height:4px;
-  background:linear-gradient(90deg,var(--m-a),var(--m-b));transform:scaleX(0);transform-origin:left;transition:transform .4s}
-.mt .grid>.card:hover::before{transform:scaleX(1)}
-.mt .grid>.card h2{margin:6px 0 4px;font-size:clamp(22px,3.6vw,26px);background:linear-gradient(90deg,var(--m-a),var(--m-b));
-  -webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
+.mm-rhead{display:flex;align-items:center;gap:10px;margin:26px 2px 14px;flex-wrap:wrap}
+.mm-rhead h2{margin:0;font-size:1.2rem;color:var(--ink)}
+.mm-pill{background:var(--soft);color:var(--ac);font-size:12.5px;font-weight:700;padding:4px 12px;border-radius:999px}
+.mm-pill.g{background:#dcfce7;color:#166534}
 
-/* Best match highlight */
-.mt .grid>.card:first-child{box-shadow:0 12px 28px rgba(79,70,229,.22);outline:2px solid rgba(79,70,229,.35);outline-offset:-2px}
-.mt .grid>.card:first-child::before{transform:scaleX(1)}
-.mt .grid>.card:first-child::after{content:"★ Best match";position:absolute;right:-34px;top:14px;transform:rotate(35deg);
-  padding:3px 40px;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(90deg,#ff9a3d,#ff4f93);animation:mGlow 2.4s ease-in-out infinite}
+.mm-list{display:grid;gap:16px}
+.mm-card{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;
+  background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin:0;
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 14px 30px -18px rgba(37,99,235,.35);transition:.3s;
+  opacity:0;animation:mm-up .6s ease forwards;animation-delay:calc(var(--i,0)*.1s + .05s)}
+.mm-card:hover{transform:translateY(-4px);border-color:#93b4f5;box-shadow:0 20px 38px -18px rgba(37,99,235,.5)}
+.mm-card.top{border-color:var(--ac);box-shadow:0 18px 38px -18px rgba(37,99,235,.55)}
+.mm-ribbon{position:absolute;top:0;left:0;background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff;font-size:11px;font-weight:800;
+  letter-spacing:.04em;padding:5px 14px 5px 12px;border-radius:0 0 14px 0;display:flex;align-items:center;gap:4px}
+.mm-ribbon .material-icons{font-size:14px}
+.mm-card.top .mm-who{margin-top:14px}
 
-/* Score bar */
-.m-bar{height:7px;border-radius:7px;background:#e3e7fa;overflow:hidden;margin:2px 0 10px}
-.m-bar i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--m-a),var(--m-b));
-  transform-origin:left;animation:mBar 1.1s .3s var(--ease) both}
+.mm-avw{position:relative;flex:none}
+.mm-av{width:64px;height:64px;border-radius:50%;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:800;font-size:26px;
+  background:linear-gradient(135deg,var(--ac),#60a5fa)}
+.mm-av img{width:100%;height:100%;object-fit:cover;display:block}
+.mm-rank{position:absolute;left:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--bg);color:var(--ac);font-size:12px;font-weight:800;
+  display:grid;place-items:center;border:2px solid var(--ac)}
 
-/* Status dot */
-.mt .dot-green{animation:mDot 1.6s ease-in-out infinite}
+.mm-who{min-width:0}
+.mm-nm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:18px;font-weight:800;margin-bottom:8px;color:var(--ink)}
+.mm-nm .n{overflow-wrap:anywhere}
+.mm-meta{display:flex;flex-wrap:wrap;gap:8px}
+.mm-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--page);color:var(--ink);border:1px solid var(--line)}
+.mm-tag .material-icons{font-size:15px;color:var(--ac)}
+.mm-tag.star .material-icons{color:#f59e0b}
+.mm-tag.on{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.mm-tag.on .material-icons{color:var(--ok)}
+.mm-tag.off{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+.mm-tag.off .material-icons{color:var(--bad)}
+.mm-tag.price{background:var(--soft);color:var(--ac2);border-color:#bfd3fb}
 
-/* Buttons in cards */
-.mt .btn{position:relative;overflow:hidden;display:inline-block;transition:transform .2s,box-shadow .25s,filter .2s}
-.mt .btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,98,254,.28);filter:brightness(1.07)}
-.mt .btn:active{transform:scale(.96)}
-.m-ripple.w{background:rgba(255,255,255,.55)}
+.mm-side{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:150px}
+.mm-ringw{position:relative;width:84px;height:84px;margin-bottom:14px}
+.mm-ringw svg{width:84px;height:84px;transform:rotate(-90deg)}
+.mm-ringw .tr{fill:none;stroke:var(--line);stroke-width:8}
+.mm-ringw .pr{fill:none;stroke:var(--ac);stroke-width:8;stroke-linecap:round;stroke-dasharray:226.2;stroke-dashoffset:226.2;
+  animation:mm-fill 1.2s .3s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes mm-fill{to{stroke-dashoffset:var(--off)}}
+.mm-ringw b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-weight:800;color:var(--ac)}
+.mm-ringw small{position:absolute;left:0;right:0;bottom:-18px;text-align:center;font-size:11px;color:var(--mute);font-weight:600}
+.mm-acts{display:flex;gap:8px;margin-top:6px}
+.mm-ab{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:40px;padding:0 16px;border-radius:12px;font-size:14px;font-weight:700;
+  text-decoration:none;transition:.2s;background:var(--ac);color:#fff;border:1.5px solid var(--ac);box-shadow:0 8px 16px -10px rgba(37,99,235,.9)}
+.mm-ab:hover{background:var(--ac2);border-color:var(--ac2);transform:translateY(-2px);color:#fff}
+.mm-ab.ghost{background:var(--soft);color:var(--ac2);border-color:#bfd3fb;box-shadow:none}
+.mm-ab.ghost:hover{background:#dbe8ff;color:var(--ac2)}
+.mm-ab .material-icons{font-size:17px}
 
-/* Empty state */
-.mt .grid>p{grid-column:1/-1;padding:24px;text-align:center;border-radius:16px;border:2px dashed #c5c9f0;background:rgba(247,248,255,.9);
-  animation:mRise .6s both}
+.mm-empty{text-align:center;padding:40px 18px;border:2px dashed #93b4f5;border-radius:22px;background:var(--bg);color:var(--mute);animation:mm-up .5s ease both}
+.mm-empty .material-icons{font-size:54px;color:var(--ac);display:block;margin:0 auto 10px;opacity:.85}
+.mm-empty b{display:block;color:var(--ink);font-size:18px;margin-bottom:6px}
+.mm-how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.mm-how div{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:13px;color:var(--mute)}
+.mm-how b{display:flex;align-items:center;gap:6px;color:var(--ink);font-size:14px;margin-bottom:4px}
+.mm-how .material-icons{color:var(--ac)}
 
-@keyframes mRise{from{opacity:0;transform:translateY(26px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes mDrop{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
-@keyframes mFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes mRadar{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.5);opacity:0}}
-@keyframes mBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@keyframes mDot{0%,100%{box-shadow:0 0 0 0 rgba(18,183,106,.55)}50%{box-shadow:0 0 0 7px rgba(18,183,106,0)}}
-@keyframes mStar{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(14deg) scale(1.15)}}
-@keyframes mGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
-@keyframes mSpin{to{transform:rotate(360deg)}}
-@keyframes mRipple{to{transform:scale(4);opacity:0}}
-
-@media (prefers-reduced-motion:reduce){
-  .mt *,.mt *::before,.mt *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+@keyframes mm-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media (max-width:640px){
+  .mm-card{grid-template-columns:auto 1fr;gap:14px;padding:18px 16px}
+  .mm-side{grid-column:1/-1;flex-direction:row;justify-content:space-between;min-width:0}
+  .mm-ringw small{display:none}
+  .mm-ringw{margin-bottom:0}
+  .mm-acts{margin-top:0}
+  .mm-btn{width:100%}
+  .mm-how{grid-template-columns:1fr}
 }
-@media (max-width:520px){.mt{padding:14px}.mt-form button{width:100%;justify-content:center}}
+@media (prefers-reduced-motion:reduce){.mm *{animation:none!important;transition:none!important;opacity:1!important}.mm .mm-ringw .pr{stroke-dashoffset:var(--off)}}
 </style>
-<div class="mt">
-<div class="mt-bg" aria-hidden="true">
-  <span class="orb o1"></span><span class="orb o2"></span>
-  <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-    <g>
-      <line class="ln" x1="80" y1="90" x2="240" y2="170"/><line class="ln" x1="240" y1="170" x2="420" y2="110"/>
-      <line class="ln" x1="420" y1="110" x2="610" y2="190"/><line class="ln" x1="610" y1="190" x2="730" y2="90"/>
-      <line class="ln" x1="240" y1="170" x2="190" y2="330"/><line class="ln" x1="420" y1="110" x2="470" y2="300"/>
-      <line class="ln" x1="610" y1="190" x2="560" y2="360"/><line class="ln" x1="190" y1="330" x2="470" y2="300"/>
-      <line class="ln" x1="470" y1="300" x2="560" y2="360"/><line class="ln" x1="190" y1="330" x2="90" y2="470"/>
-      <line class="ln" x1="190" y1="330" x2="330" y2="500"/><line class="ln" x1="470" y1="300" x2="330" y2="500"/>
-      <line class="ln" x1="560" y1="360" x2="700" y2="480"/><line class="ln" x1="330" y1="500" x2="520" y2="540"/>
-      <line class="ln" x1="520" y1="540" x2="700" y2="480"/>
-      <circle class="nd" cx="80" cy="90" r="5"/><circle class="nd b" cx="240" cy="170" r="6"/>
-      <circle class="nd" cx="420" cy="110" r="5"/><circle class="nd b" cx="610" cy="190" r="6"/>
-      <circle class="nd" cx="730" cy="90" r="4"/><circle class="nd b" cx="190" cy="330" r="6"/>
-      <circle class="nd" cx="470" cy="300" r="7"/><circle class="nd b" cx="560" cy="360" r="5"/>
-      <circle class="nd" cx="90" cy="470" r="4"/><circle class="nd b" cx="330" cy="500" r="6"/>
-      <circle class="nd" cx="520" cy="540" r="4"/><circle class="nd b" cx="700" cy="480" r="5"/>
-    </g>
-  </svg>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<div class="mm">
+
+
+  <div class="mm-hero">
+    <div class="mm-hbg"></div>
+    <div class="mm-ttl">
+      <div class="mm-ic"><span class="material-icons">gps_fixed</span></div>
+      <div>
+        <h1>Smart Worker Match</h1>
+        <p>We rank workers by rating, verification, availability, experience and distance.</p>
+      </div>
+    </div>
+
+    <form method="get" class="mm-form" id="mmsf">
+      <div class="mm-sel">
+        <span class="material-icons">handyman</span>
+        <select name="cat" aria-label="Choose a skill"><?php foreach ($CATS as $x) {
+            echo "<option" . ($c == $x ? " selected" : "") . ">" . e($x) . "</option>";
+        } ?></select>
+      </div>
+      <input type="hidden" name="lat" id="lat" value="<?= $la ?: "" ?>"><input type="hidden" name="lng" id="lng" value="<?= $ln ?: "" ?>">
+      <button class="mm-btn pri" id="mmgo"><span class="material-icons">search</span> Find best workers</button>
+      <button type="button" class="mm-btn loc" id="mmloc"><span class="material-icons">my_location</span> Use my location</button>
+    </form>
+    <div class="mm-lstat" id="mmst">
+      <?php if ($la): ?><span class="material-icons">location_on</span> Using your location to show distance<?php else: ?><span class="material-icons">info</span> Tip: use your location to see who is closest<?php endif; ?>
+    </div>
+  </div>
+
+  <?php if ($c === ""): ?>
+    <div class="mm-how">
+      <div><b><span class="material-icons">touch_app</span> 1. Pick a skill</b>Choose the kind of worker you need.</div>
+      <div><b><span class="material-icons">calculate</span> 2. We score them</b>Rating, jobs done, verified and nearby workers score higher.</div>
+      <div><b><span class="material-icons">handshake</span> 3. Hire</b>Open a profile or hire the best match directly.</div>
+    </div>
+  <?php else: ?>
+    <div class="mm-rhead">
+      <h2>Best <?= e($c) ?> workers</h2>
+      <?php if ($res): ?><span class="mm-pill"><?= count($res) ?> match<?= count($res) > 1 ? "es" : "" ?></span><?php endif; ?>
+      <?php if ($la): ?><span class="mm-pill g"><span class="material-icons" style="font-size:14px">location_on</span> Distance on</span><?php endif; ?>
+    </div>
+
+    <?php if ($res): ?>
+    <div class="mm-list">
+      <?php foreach ($res as $i => $w):
+          $sc = max(0, min(100, (int) $w["sc"]));
+          $ph = $w["photo"] ?? "";
+          $ini = e(mb_strtoupper(mb_substr((string) $w["name"], 0, 1)));
+      ?>
+      <div class="mm-card<?= $i === 0 ? " top" : "" ?>" style="--i:<?= $i ?>">
+        <?php if ($i === 0): ?><span class="mm-ribbon"><span class="material-icons">star</span> BEST MATCH</span><?php endif; ?>
+        <div class="mm-avw">
+          <div class="mm-av"><?= $ph ? '<img src="' . e($ph) . '" alt="">' : $ini ?></div>
+          <span class="mm-rank"><?= $i + 1 ?></span>
+        </div>
+        <div class="mm-who">
+          <div class="mm-nm"><span class="n"><?= e($w["name"]) ?></span> <?= badge($w["verified"]) ?></div>
+          <div class="mm-meta">
+            <span class="mm-tag star"><span class="material-icons">star</span><?= $w["r"] ? round($w["r"], 1) : "No reviews" ?></span>
+            <span class="mm-tag"><span class="material-icons">task_alt</span><?= (int) $w["done"] ?> jobs</span>
+            <?php if ($w["available"]): ?>
+              <span class="mm-tag on"><span class="material-icons">check_circle</span>Available</span>
+            <?php else: ?>
+              <span class="mm-tag off"><span class="material-icons">schedule</span>Busy</span>
+            <?php endif; ?>
+            <?php if ($w["d"] !== null): ?>
+              <span class="mm-tag"><span class="material-icons">place</span><?= round($w["d"], 1) ?> km</span>
+            <?php endif; ?>
+            <?php if ($w["minp"]): ?>
+              <span class="mm-tag price"><span class="material-icons">payments</span>From ₹<?= (int) $w["minp"] ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div class="mm-side">
+          <div class="mm-ringw" style="--off:<?= round(226.2 * (1 - $sc / 100), 1) ?>">
+            <svg viewBox="0 0 84 84"><circle class="tr" cx="42" cy="42" r="36"/><circle class="pr" cx="42" cy="42" r="36"/></svg>
+            <b data-n="<?= $sc ?>"><?= $sc ?>%</b>
+            <small>match</small>
+          </div>
+          <div class="mm-acts">
+            <a class="mm-ab" href="hire.php?w=<?= (int) $w["id"] ?>"><span class="material-icons">handshake</span> Hire</a>
+            <a class="mm-ab ghost" href="worker.php?id=<?= (int) $w["id"] ?>"><span class="material-icons">person</span> Profile</a>
+          </div>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+      <div class="mm-empty"><span class="material-icons">person_search</span><b>No workers found for this skill</b>Try a different skill, or post a job and let workers send you offers.</div>
+    <?php endif; ?>
+  <?php endif; ?>
+
 </div>
-<h2 class="mt-title"><span class="material-icons mi">gps_fixed</span> Smart Worker Match</h2><form method="get" class="mt-form" style="display:flex;gap:8px;flex-wrap:wrap"><select name="cat"><?php foreach (
-    $CATS
-    as $x
-) {
-    echo "<option" . ($c == $x ? " selected" : "") . ">" . $x . "</option>";
-} ?></select>
-<input type="hidden" name="lat" id="lat" value="<?= $la ?:
-    "" ?>"><input type="hidden" name="lng" id="lng" value="<?= $ln ?:
-    "" ?>"><button>Find best workers</button>
-<button type="button" onclick="navigator.geolocation.getCurrentPosition(p=>{lat.value=p.coords.latitude;lng.value=p.coords.longitude;this.form.submit()})"><span class="material-icons mi">place</span> Use my location</button></form>
-<div class="grid"><?php
-foreach ($res as $w) {
-    echo '<div class="card"><b>' .
-        e($w["name"]) .
-        "</b> " .
-        badge($w["verified"]) .
-        "<h2>" .
-        $w["sc"] .
-        '% match</h2><div class="m-bar"><i style="width:' .
-        max(0, min(100, (int) $w["sc"])) .
-        '%"></i></div>' .
-        ($w["r"]
-            ? round($w["r"], 1) .
-                ' <span class="material-icons mi-xs">star</span>'
-            : "No reviews") .
-        " · " .
-        $w["done"] .
-        " jobs<br>" .
-        ($w["available"]
-            ? '<span class="dot-green"></span> Available'
-            : '<span class="dot-red"></span> Busy') .
-        ($w["d"] !== null
-            ? ' · <span class="material-icons mi">place</span> ' .
-                round($w["d"], 1) .
-                " km"
-            : "") .
-        ($w["minp"] ? "<br>From ₹" . $w["minp"] : "") .
-        '<br><br><a class="btn" href="hire.php?w=' .
-        $w["id"] .
-        '">Hire</a> <a class="btn" href="worker.php?id=' .
-        $w["id"] .
-        '">Profile</a></div>';
-}
-if ($c !== "" && !$res) {
-    echo "<p>No workers found for this skill.</p>";
-}
-?></div></div>
+
 <script>
 (function () {
-  var root = document.querySelector(".mt");
-  if (!root) return;
-  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('mmsf'), go = $('mmgo'), loc = $('mmloc'), st = $('mmst');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Count-up for the match percentage
+  function msg(icon, text, err) {
+    st.className = 'mm-lstat' + (err ? ' err' : '');
+    st.innerHTML = '<span class="material-icons">' + icon + '</span> ' + text;
+  }
+
+  form.addEventListener('submit', function () {
+    go.classList.add('busy');
+    go.innerHTML = '<span class="material-icons">autorenew</span> Searching...';
+  });
+
+  loc.addEventListener('click', function () {
+    if (!navigator.geolocation) { msg('error_outline', 'Your browser does not support location.', true); return; }
+    loc.classList.add('busy');
+    loc.innerHTML = '<span class="material-icons">autorenew</span> Locating...';
+    msg('my_location', 'Getting your location...');
+    navigator.geolocation.getCurrentPosition(function (p) {
+      $('lat').value = p.coords.latitude;
+      $('lng').value = p.coords.longitude;
+      msg('location_on', 'Location found. Searching...');
+      form.submit();
+    }, function () {
+      loc.classList.remove('busy');
+      loc.innerHTML = '<span class="material-icons">my_location</span> Use my location';
+      msg('location_off', 'Could not get your location. Allow location access and try again.', true);
+    }, { timeout: 10000 });
+  });
+
   if (!reduce) {
-    root.querySelectorAll(".grid>.card h2").forEach(function (el, i) {
-      var m = el.textContent.match(/^(\d+)(% match)$/);
-      if (!m) return;
-      var target = parseInt(m[1], 10), suffix = m[2], t0 = null, dur = 1100, delay = 150 + i * 100;
-      el.textContent = "0" + suffix;
+    document.querySelectorAll('.mm-ringw b').forEach(function (el, i) {
+      var target = +el.getAttribute('data-n'), t0 = null;
+      el.textContent = '0%';
       setTimeout(function () {
         requestAnimationFrame(function tick(ts) {
           if (t0 === null) t0 = ts;
-          var p = Math.min((ts - t0) / dur, 1);
-          el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + suffix;
+          var p = Math.min((ts - t0) / 1100, 1);
+          el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + '%';
           if (p < 1) requestAnimationFrame(tick);
         });
-      }, delay);
+      }, 250 + i * 100);
     });
   }
-
-  // Loading spinner on the search buttons (does not block submit or geolocation)
-  var form = root.querySelector("form");
-  if (form) {
-    form.addEventListener("submit", function () {
-      var b = form.querySelector("button:not([type])");
-      if (b) b.classList.add("busy");
-    });
-    var geo = form.querySelector('button[type="button"]');
-    if (geo) geo.addEventListener("click", function () { geo.classList.add("busy"); });
-  }
-
-  // Ripple on buttons and links (navigation and submit still work)
-  root.addEventListener("click", function (e) {
-    var b = e.target.closest(".btn, button");
-    if (!b || reduce) return;
-    var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height);
-    var s = document.createElement("span");
-    s.className = "m-ripple" + (b.classList.contains("btn") ? " w" : "");
-    s.style.width = s.style.height = d + "px";
-    s.style.left = (e.clientX - r.left - d / 2) + "px";
-    s.style.top = (e.clientY - r.top - d / 2) + "px";
-    b.appendChild(s);
-    setTimeout(function () { s.remove(); }, 600);
-  });
 })();
 </script>
 <?php foot();
