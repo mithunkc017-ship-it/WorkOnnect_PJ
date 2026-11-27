@@ -277,28 +277,9 @@ function sendReminders($pdo)
 }
 function announceBar()
 {
-    global $pdo;
-    try {
-        $a = $pdo
-            ->query(
-                "SELECT * FROM announcements WHERE active=1 ORDER BY id DESC LIMIT 1",
-            )
-            ->fetch();
-    } catch (Exception $x) {
-        return "";
-    }
-    if (!$a) {
-        return "";
-    }
-    return '<div class="ann" id="ann"><span class="material-icons mi">campaign</span> ' .
-        e($a["msg"]) .
-        ($a["link"] ? ' <a href="' . e($a["link"]) . '">Learn more</a>' : "") .
-        ' <button onclick="localStorage.setItem(\'ann\',\'' .
-        $a["id"] .
-        '\');this.parentNode.hidden=true" style="padding:0 8px">×</button></div><script>if(localStorage.getItem("ann")==="' .
-        $a["id"] .
-        '")document.getElementById("ann").hidden=true</script>';
+   return announce_bar_html();
 }
+
 function lh($pdo, $uid, $email, $ok, $note)
 {
     try {
@@ -942,6 +923,7 @@ require_once __DIR__ . "/dash_lib.php";
 require_once __DIR__ . "/login_otp.php";
 require_once __DIR__ . "/notif_lib.php";
 require_once __DIR__ . "/payment_flow.php";
+require_once __DIR__ . "/announce_lib.php";
 
 // Render the AI assistant once for logged-in users; the buffer above injects it into every HTML page
 if (me() && !in_array(basename($_SERVER["SCRIPT_NAME"]), ["ai_chat.php", "chat.php"])) {
