@@ -9,34 +9,42 @@ function xt($k, $a = []) {
     static $S = null;
     if ($S === null) $S = [
         "typo" => ["en" => "Did you mean **%s**? Pick an option 👇", "kn" => "ನೀವು **%s** ಎಂದು ಹೇಳಿದ್ದೀರಾ? ಒಂದನ್ನು ಆರಿಸಿ 👇", "hi" => "क्या आपका मतलब **%s** था? एक विकल्प चुनें 👇"],
-        "found_tip" => ["en" => "Tap **Book** on a worker, or say *book worker #1*. Add a time to filter by availability, e.g. *electrician tomorrow 5 pm*.",
-                        "kn" => "ಯಾವುದೇ ಕೆಲಸಗಾರರ **Book** ಒತ್ತಿ, ಅಥವಾ *book worker #1* ಎಂದು ಬರೆಯಿರಿ. ಲಭ್ಯತೆ ನೋಡಲು ಸಮಯ ಸೇರಿಸಿ, ಉದಾ: *electrician tomorrow 5 pm*.",
-                        "hi" => "किसी वर्कर पर **Book** दबाएँ या *book worker #1* लिखें। उपलब्धता देखने के लिए समय जोड़ें, जैसे *electrician tomorrow 5 pm*।"],
+        "found_tip" => ["en" => "💡 Tap **Book** on a card, or type *book worker #1*. Add a time to filter availability (e.g. *electrician tomorrow 5 pm*).",
+                        "kn" => "💡 ಯಾವುದೇ ಕೆಲಸಗಾರರ **Book** ಒತ್ತಿ, ಅಥವಾ *book worker #1* ಎಂದು ಬರೆಯಿರಿ. ಲಭ್ಯತೆ ನೋಡಲು ಸಮಯ ಸೇರಿಸಿ, ಉದಾ: *electrician tomorrow 5 pm*.",
+                        "hi" => "💡 किसी वर्कर पर **Book** दबाएँ या *book worker #1* लिखें। उपलब्धता देखने के लिए समय जोड़ें, जैसे *electrician tomorrow 5 pm*।"],
         "dym" => ["en" => "I'm not completely sure what you meant 🤔 Did you mean one of these?", "kn" => "ನೀವು ಏನು ಹೇಳಿದ್ದೀರಿ ಎಂದು ಸಂಪೂರ್ಣ ಖಚಿತವಿಲ್ಲ 🤔 ಇವುಗಳಲ್ಲಿ ಒಂದೇ?", "hi" => "मुझे पूरी तरह समझ नहीं आया 🤔 क्या आपका मतलब इनमें से कोई था?"],
-        "fallback" => ["en" => "I couldn't match “%s” to anything yet 🤔 I'm best at finding workers, estimating prices and managing bookings. Try a button below, or type something like *%s*.",
-                       "kn" => "“%s” ಅನ್ನು ಇನ್ನೂ ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲಾಗಲಿಲ್ಲ 🤔 ನಾನು ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಲು, ಬೆಲೆ ಅಂದಾಜಿಸಲು ಮತ್ತು ಬುಕಿಂಗ್ ನಿರ್ವಹಿಸಲು ಉತ್ತಮ. ಬಟನ್ ಒತ್ತಿ ಅಥವಾ *%s* ಎಂದು ಟೈಪ್ ಮಾಡಿ.",
-                       "hi" => "मैं “%s” को अभी समझ नहीं पाया 🤔 मैं वर्कर ढूँढने, कीमत का अनुमान लगाने और बुकिंग संभालने में सबसे अच्छा हूँ। कोई बटन दबाएँ या *%s* जैसा लिखें।"],
+        "fallback" => ["en" => "I didn't quite catch “%s” 🤔\n\n**Here is what I can help with right away:**\n• 🔍 Find & book verified workers (*%s*)\n• 💡 Instant price estimates & booking status\n• 🧮 Quick math (*20%% of 850*) & platform FAQs\n\nPick a suggestion below or rephrase your question 👇",
+                       "kn" => "“%s” ಅನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲಾಗಲಿಲ್ಲ 🤔 ನಾನು ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಲು, ಬೆಲೆ ಅಂದಾಜಿಸಲು ಮತ್ತು ಬುಕಿಂಗ್ ನಿರ್ವಹಿಸಲು ಸಹಾಯ ಮಾಡಬಲ್ಲೆ. ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ ಅಥವಾ *%s* ಎಂದು ಟೈಪ್ ಮಾಡಿ.",
+                       "hi" => "मैं “%s” को समझ नहीं पाया 🤔 मैं वर्कर ढूँढने, कीमत का अनुमान लगाने और बुकिंग संभालने में मदद कर सकता हूँ। नीचे कोई बटन दबाएँ या *%s* जैसा लिखें।"],
         "name_found" => ["en" => "I found **%d** worker(s) matching your search 👇", "kn" => "ನಿಮ್ಮ ಹುಡುಕಾಟಕ್ಕೆ ಹೊಂದುವ **%d** ಕೆಲಸಗಾರರು ಸಿಕ್ಕಿದ್ದಾರೆ 👇", "hi" => "आपकी खोज से मेल खाते **%d** वर्कर मिले 👇"],
-        "who" => ["en" => "I'm **WorkOnnect Assistant** 🤖 I help you find trusted workers, estimate prices, and book and manage jobs, in English, ಕನ್ನಡ and हिन्दी.",
+        "who" => ["en" => "I'm **WorkOnnect Assistant** 🤖\n• Find & book verified local workers\n• Compare ratings, prices & availability\n• Manage bookings, earnings & platform questions in **English, ಕನ್ನಡ & हिन्दी**.",
                   "kn" => "ನಾನು **WorkOnnect Assistant** 🤖 ವಿಶ್ವಾಸಾರ್ಹ ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಲು, ಬೆಲೆ ಅಂದಾಜಿಸಲು, ಬುಕ್ ಮಾಡಲು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.",
                   "hi" => "मैं **WorkOnnect Assistant** हूँ 🤖 मैं भरोसेमंद वर्कर ढूँढने, कीमत का अंदाज़ा लगाने और बुकिंग संभालने में मदद करता हूँ।"],
         "howru" => ["en" => "I'm doing great, thanks for asking! 😊 How can I help you today?", "kn" => "ನಾನು ಚೆನ್ನಾಗಿದ್ದೇನೆ, ಕೇಳಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದ! 😊 ಇಂದು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?", "hi" => "मैं बढ़िया हूँ, पूछने के लिए धन्यवाद! 😊 आज मैं कैसे मदद करूँ?"],
-        "services" => ["en" => "Services on WorkOnnect: %s. Tap one to search 👇", "kn" => "WorkOnnect ಸೇವೆಗಳು: %s. ಹುಡುಕಲು ಒಂದನ್ನು ಒತ್ತಿ 👇", "hi" => "WorkOnnect की सेवाएँ: %s। खोजने के लिए एक चुनें 👇"],
-        "support" => ["en" => "🙋 For platform problems open the **Help** page. For a booking, message the worker from the booking's job page. I never ask for OTPs or card details."],
-        "post_c" => ["en" => "📝 To post a job: open **Post Job** in the top menu, describe the work, choose a category and time. Workers send offers and you pick one. Or I can book a specific worker for you, just say *find an electrician*."],
-        "offer_c" => ["en" => "💬 When you post a job, workers send **offers** with their price. Compare rating, price and availability on the job page and accept the best one."],
-        "offer_w" => ["en" => "💬 Open **Open Jobs** in the top menu, pick a job and send your offer with a fair price and a short message. Quick replies and a complete profile win more jobs."],
-        "review" => ["en" => "⭐ After a job is completed, open it from your bookings and leave a rating and review. Honest reviews help other customers and good workers."],
-        "coupon" => ["en" => "🎟️ Enter a coupon code on the payment step of the job page; if it is valid the discount is applied before you pay. The ₹50 referral bonus goes to your wallet."],
-        "dispute" => ["en" => "⚖️ If something went wrong, open the booking on its job page and raise a dispute or complaint, or use the **Help** page. The admin team reviews it. Keep photos and messages as proof."],
-        "lang" => ["en" => "🌐 Use the **EN / ಕನ್ನಡ / हिं** switch at the top of this chat. I reply and speak in the language you choose."],
-        "voice" => ["en" => "🎙️ Tap the mic to speak, and the speaker icon at the top to hear my replies. Voice needs a supported browser (Chrome or Edge) and microphone permission."],
-        "areas" => ["en" => "📍 Add the area to your search, e.g. *electrician in Indiranagar* or *plumber near Whitefield*, and I'll list the available workers there."],
-        "whoami" => ["en" => "You're logged in as **%s** (%s)."],
-        "account_c" => ["en" => "⚙️ Open **Settings** in the top menu to change your name, phone, email or password."],
-        "account_w" => ["en" => "⚙️ Open **My Profile** to edit your service details, and **Settings** to change your phone, email or password."],
-        "bye2" => ["en" => "Goodbye! 👋 Come back any time."],
-        "okay" => ["en" => "👍 What would you like to do next?"],
+        "services" => ["en" => "🛠️ **Available Services on WorkOnnect:**\n%s\n\nTap any service below to view top-rated workers 👇",
+                       "kn" => "🛠️ **WorkOnnect ಸೇವೆಗಳು:** %s. ಹುಡುಕಲು ಒಂದನ್ನು ಒತ್ತಿ 👇",
+                       "hi" => "🛠️ **WorkOnnect की सेवाएँ:** %s। खोजने के लिए एक चुनें 👇"],
+        "support" => ["en" => "🙋 **Need Help or Support?**\n• **Platform issues:** Open the **Help** page from the top menu.\n• **Active booking:** Message your worker directly on the booking's **Job Page**.\n• **Security:** WorkOnnect never asks for OTPs, passwords, or card details."],
+        "post_c" => ["en" => "📝 **How to Post a Job:**\n1. Open **Post Job** in the top menu.\n2. Describe the task, select a category, and pick a preferred time.\n3. Compare offers from workers and accept the best fit.\n\n💡 Or book directly here by typing *find an electrician*."],
+        "offer_c" => ["en" => "💬 **How Worker Offers Work:**\nWhen you post an open job, nearby workers send **offers** with their price quote. Compare their rating, completed jobs, and price on the job page before accepting."],
+        "offer_w" => ["en" => "💬 **How to Win More Jobs:**\n1. Open **Open Jobs** in the top menu.\n2. Pick a job matching your skill and send a fair price quote with a clear note.\n3. Keep your profile 100% complete and reply quickly."],
+        "review" => ["en" => "⭐ **Rating & Reviews:**\nOnce a job is marked **Completed**, open it from **My Bookings** to submit a 1–5 star rating and review."],
+        "coupon" => ["en" => "🎟️ **Coupons & Discounts:**\nApply your promo code at checkout on the **Job Page** before paying. Referral bonuses (₹50) are credited straight to your **Wallet**."],
+        "dispute" => ["en" => "⚖️ **Disputes & Complaints:**\nOpen the booking's **Job Page** and click **Raise Dispute / Report**, or contact us via the **Help** page. Keep chat messages and photos as proof for faster resolution."],
+        "lang" => ["en" => "🌐 **Language Switch:**\nUse the **EN / ಕನ್ನಡ / हिं** toggle at the top of this chat window to switch languages anytime."],
+        "voice" => ["en" => "🎙️ **Voice Input & Read-Aloud:**\nTap the **mic icon** to speak your request, and the **speaker icon** to hear responses read aloud (supported on Chrome & Edge with mic permission)."],
+        "areas" => ["en" => "📍 **Service Areas:**\nInclude your neighborhood or city in your search—for example, *electrician in Indiranagar* or *plumber near Whitefield*—to filter local workers."],
+        "whoami" => ["en" => "👤 You are logged in as **%s** (Role: **%s**)."],
+        "account_c" => ["en" => "⚙️ **Account Settings:**\nOpen **Settings** in the top menu to update your name, phone number, email, or password."],
+        "account_w" => ["en" => "⚙️ **Worker Profile & Settings:**\n• **My Profile:** Update your skill category, rate, experience, photo & working hours.\n• **Settings:** Update your phone number, email, or password."],
+        "urgent" => ["en" => "⚡ **Urgent / Same-Day Help:**\nSearch with **today** and a near time—for example, *plumber today 8 pm*—to see workers currently open and clash-free."],
+        "resched" => ["en" => "🗓️ **Rescheduling a Booking:**\nMessage your worker on the **Job Page** to agree on a new time, or cancel before acceptance (free) and place a fresh booking for the new slot."],
+        "tip" => ["en" => "💝 **Tipping Your Worker:**\nYou can add an optional tip on the **Job Page** during payment. **100%% of your tip** goes directly to the worker."],
+        "worker_onboard" => ["en" => "🚀 **Getting Started as a Worker:**\n1. Complete your **My Profile** (category, area, rate, photo & working hours).\n2. Submit ID verification to earn the **Verified ✔** badge.\n3. Check **Open Jobs** or respond fast to direct booking requests."],
+        "worker_payout" => ["en" => "🏦 **Worker Payouts & Commission:**\nCustomer payments (minus platform commission, plus 100%% of tips) are tracked in your **Earnings** and settled to your registered payout method."],
+        "admin_help" => ["en" => "🛠️ **Admin Quick Actions:**\n• Type **Platform overview** for live user, job, dispute & revenue counts.\n• Use the admin dashboard to verify worker IDs, manage categories, and resolve open disputes."],
+        "bye2" => ["en" => "Goodbye! 👋 Come back anytime you need help."],
+        "okay" => ["en" => "👍 Got it! What would you like to do next?"],
         "joke" => ["en" => "😄 %s"],
         "nocalc" => ["en" => "🧮 I can't divide by zero 😅"],
     ];
@@ -88,7 +96,8 @@ function x_dict() {
         "earnings", "earning", "availability", "available", "verified", "verification", "profile", "performance", "performing", "rating", "ratings",
         "tomorrow", "today", "tonight", "evening", "morning", "afternoon", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
         "search", "worker", "workers", "nearby", "policy", "complaint", "dispute", "support", "services", "service", "thanks", "hello", "charges", "customer",
-        "calculate", "developer", "developers", "location", "offers", "review", "reviews", "coupon", "discount", "language", "kannada", "weekdays", "weekday"];
+        "calculate", "developer", "developers", "location", "offers", "review", "reviews", "coupon", "discount", "language", "kannada", "weekdays", "weekday",
+        "reschedule", "urgent", "emergency", "settlement", "payout", "overview", "dashboard"];
     foreach ((array) ($CATS ?? []) as $c) foreach (preg_split('/\s+/', mb_strtolower((string) $c)) as $p) if (strlen($p) >= 5 && preg_match('/^[a-z]+$/', $p)) $D[] = $p;
     return $D = array_values(array_unique($D));
 }
@@ -210,6 +219,24 @@ function x_num($v) {
     return rtrim(rtrim(number_format($v, 6, ".", ","), "0"), ".");
 }
 
+/* ---------- offline quick answers for common general questions ---------- */
+function x_general_qa($m, $chips) {
+    $QA = [
+        [['/\b(capital of india|india\'?s capital)\b/i'], "🇮🇳 The capital of India is **New Delhi**."],
+        [['/\b(capital of karnataka|karnataka\'?s capital)\b/i'], "📍 The capital of Karnataka is **Bengaluru** (Bangalore)."],
+        [['/\b(pm of india|prime minister of india)\b/i'], "🇮🇳 The Prime Minister of India is **Narendra Modi**."],
+        [['/\b(currency of india|indian currency)\b/i'], "💱 India's official currency is the **Indian Rupee (₹ / INR)**."],
+        [['/\b(emergency number|police number|ambulance number|helpline india)\b/i'], "🚨 **India Emergency Helplines:**\n• **112** — All-in-one National Emergency\n• **100** — Police · **101** — Fire · **108** — Ambulance"],
+        [['/\b(gst|goods and services tax)\b/i'], "🧾 **GST (Goods and Services Tax)** is India's unified indirect tax on goods and services, with standard slabs of 5%, 12%, 18%, and 28%."],
+        [['/\b(what is upi|full form of upi)\b/i'], "📲 **UPI (Unified Payments Interface)** is India's instant real-time bank-to-bank mobile payment system developed by NPCI."],
+        [['/\b(water leak|pipe burst|stop leak)\b/i'], "🚰 **Quick Water-Leak Tip:**\n1. Shut off the nearest angle valve or main water valve immediately.\n2. Keep electrical switches dry.\n3. Book a verified plumber right here!"],
+        [['/\b(power cut|short circuit|trip|mcb|spark)\b/i'], "⚡ **Electrical Safety Tip:**\n1. Switch off the affected appliance and check the main **MCB** board.\n2. Never touch exposed wires or wet switches.\n3. Book a verified electrician for inspection."],
+    ];
+    foreach ($QA as [$rxs, $ans]) {
+        foreach ($rxs as $rx) if (preg_match($rx, $m)) reply($ans, [], $chips);
+    }
+}
+
 /* ---------- FAQ, calculator, small talk (all roles) ---------- */
 function x_faq() {
     global $m, $role, $u, $CATS, $L;
@@ -230,6 +257,7 @@ function x_faq() {
             if ($ex->getMessage() == "div0") reply(xt("nocalc"), [], $chips);
         }
     }
+    x_more();   // new: per-role features + knowledge base
 
     if (mb_strlen($m) < 12 && preg_match('/^(ok|okay|cool|great|nice|awesome|fine|hmm|k)\b/i', $m)) reply(xt("okay"), [], $chips);
     if (has($m, ["bye", "goodbye", "see you", "good night"])) reply(xt("bye2"), [], $chips);
@@ -255,6 +283,14 @@ function x_faq() {
     if (!detect_cat($m) && has($m, ["language", "kannada", "hindi", "ಕನ್ನಡದಲ್ಲಿ", "हिंदी में"])) reply(xt("lang"), [], $chips);
     if (!detect_cat($m) && has($m, ["voice", "microphone", "speak to you", "talk to you"])) reply(xt("voice"), [], $chips);
     if (has($m, ["which areas", "which cities", "where available", "service area", "areas covered", "which city", "coverage"])) reply(xt("areas"), [], $chips);
+    if (has($m, ["urgent", "emergency", "right now", "asap", "immediately", "same day"])) reply(xt("urgent"), [], $chips);
+    if (has($m, ["reschedule", "change time", "change date", "postpone", "move booking"])) reply(xt("resched"), [], $chips);
+    if (has($m, ["tip", "tips", "tipping", "bonus for worker"])) reply(xt("tip"), [], $chips);
+    if ($role == "worker" && has($m, ["how to get jobs", "more bookings", "get verified", "blue badge", "onboarding", "start working"])) reply(xt("worker_onboard"), [], $chips);
+    if ($role == "worker" && has($m, ["when do i get paid", "bank transfer", "withdraw", "settlement work", "how payout"])) reply(xt("worker_payout"), [], $chips);
+    if ($role == "admin" && has($m, ["admin", "manage", "verify worker", "moderate"])) reply(xt("admin_help"), [], $chips);
+
+    x_general_qa($m, $chips);
 }
 
 /* ---------- optional: real AI for any other question (needs AI_KEY in config.php) ---------- */
@@ -262,18 +298,18 @@ function x_llm($msg) {
     global $role, $L;
     if (!defined("AI_KEY") || AI_KEY === "" || !function_exists("curl_init")) return null;
     $lang = ["en" => "English", "kn" => "Kannada", "hi" => "Hindi"][$L] ?? "English";
-    $sys = "You are WorkOnnect Assistant inside a local-services marketplace in India where customers book verified electricians, plumbers, painters, carpenters, cleaners, drivers, mechanics and AC technicians. The user is a $role. Reply in $lang in at most 4 short sentences. You may answer general questions briefly, but you cannot search, book, cancel or change anything yourself: for that, tell the user to type commands such as 'Find an electrician', 'Show my bookings' or 'Estimate a plumbing job'. Never invent worker names, prices, booking details or policies. Never ask for OTPs, passwords or card details.";
+    $sys = "You are WorkOnnect Assistant inside a local-services marketplace in India where customers book verified electricians, plumbers, painters, carpenters, cleaners, drivers, mechanics and AC technicians. The user is a $role. Reply in $lang using clean, concise formatting (short bullet points or 2-4 crisp sentences). You may answer general questions helpfully, but you cannot search, book, cancel or change anything yourself: for that, tell the user to type commands such as 'Find an electrician', 'Show my bookings' or 'Estimate a plumbing job'. Never invent worker names, prices, booking details or policies. Never ask for OTPs, passwords or card details.";
     $ch = curl_init("https://api.anthropic.com/v1/messages");
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 12, CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_HTTPHEADER => ["content-type: application/json", "x-api-key: " . AI_KEY, "anthropic-version: 2023-06-01"],
-        CURLOPT_POSTFIELDS => json_encode(["model" => "claude-sonnet-5-5", "max_tokens" => 300, "system" => $sys,
+        CURLOPT_POSTFIELDS => json_encode(["model" => "claude-sonnet-5-5", "max_tokens" => 350, "system" => $sys,
             "messages" => [["role" => "user", "content" => mb_substr((string) $msg, 0, 600)]]], JSON_UNESCAPED_UNICODE)]);
     $res = curl_exec($ch); $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
     if (!$res || $code != 200) return null;
     $j = json_decode($res, true); $t = "";
     foreach (($j["content"] ?? []) as $b) if (($b["type"] ?? "") == "text") $t .= $b["text"];
     $t = trim($t);
-    return $t !== "" ? mb_substr($t, 0, 700) : null;
+    return $t !== "" ? mb_substr($t, 0, 800) : null;
 }
 
 /* ---------- smart fallback: never a dead end ---------- */
@@ -284,20 +320,22 @@ function x_intents($m, $role) {
             ["Estimate a plumbing job", ["price", "prices", "cost", "estimate", "rate", "rates", "charge", "charges", "cheap", "ಬೆಲೆ", "कीमत"]],
             ["Find an electrician near me", ["find", "search", "worker", "workers", "hire", "electrician", "nearby", "looking", "~near"]],
             ["Find a verified painter", ["verified", "trusted", "painter", "~best", "~top"]],
+            ["My wallet & referrals", ["wallet", "referral", "refer", "coupon", "bonus", "cashback", "balance"]],
             ["Cancellation policy", ["cancel", "cancellation", "refund", "policy", "fee"]],
             ["How do payments work?", ["pay", "payment", "payments", "upi", "money", "bill", "invoice", "ಪಾವತಿ", "भुगतान"]],
             ["Is it safe?", ["safe", "safety", "secure", "trust", "scam"]],
-            ["Wallet and referral", ["wallet", "referral", "refer", "coupon", "bonus", "cashback"]],
             ["How does WorkOnnect work?", ["~how", "~work", "~works", "~use", "~start", "guide", "tutorial"]],
         ],
         "worker" => [
             ["Show my new job requests", ["job", "jobs", "request", "requests", "booking", "bookings", "order", "orders"]],
-            ["How much did I earn this month?", ["earn", "earning", "earnings", "income", "money", "salary", "payout", "paid"]],
+            ["Open jobs near me", ["open", "marketplace", "bid", "offer", "offers", "available"]],
+            ["How much did I earn this month?", ["earn", "earning", "earnings", "income", "money", "salary", "payout", "paid", "settlement"]],
             ["How am I performing?", ["perform", "performance", "rating", "ratings", "review", "reviews", "stats"]],
             ["Improve my profile", ["profile", "improve", "verify", "verification", "photo", "badge"]],
             ["Set availability Mon-Sat 9am to 6pm", ["availability", "available", "schedule", "hours", "timing", "timings", "~days"]],
         ],
         "admin" => [
+            ["Platform overview", ["overview", "stats", "dashboard", "users", "revenue", "dispute", "platform", "report"]],
             ["How does WorkOnnect work?", ["~how", "~work", "~works", "guide", "platform"]],
             ["How do payments work?", ["pay", "payment", "payments", "commission", "refund", "money"]],
             ["Is it safe?", ["safe", "safety", "secure", "trust", "verified"]],
@@ -332,11 +370,14 @@ function x_fallback() {
     $hits = x_intents($m, $role);
 
     // 3) real AI for open questions, when AI_KEY is set
-    if (($ai = x_llm($msg)) !== null) reply($ai, [], $hits ?: menu_chips($role));
+    if (($ai = x_llm2($msg)) !== null) reply($ai, [], $hits ?: menu_chips($role));
 
     // 4) offline: closest known topics, otherwise a helpful menu
     if ($hits) reply(xt("dym"), [], $hits);
-    $tip = $role == "worker" ? "Set availability Mon-Sat 9am to 6pm" : ($role == "customer" ? "plumber in Indiranagar tomorrow 5 pm" : "How do payments work?");
+        x_general_q($m, $role);
+    $tip = $role == "worker" ? "Set availability Mon-Sat 9am to 6pm" : ($role == "customer" ? "plumber in Indiranagar tomorrow 5 pm" : "Platform overview");
     $shown = trim(str_replace("*", "", mb_substr((string) $msg, 0, 40)));
     reply(xt("fallback", [$shown, $tip]), [], menu_chips($role));
 }
+
+require __DIR__ . "/ai_brain_more.php";

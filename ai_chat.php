@@ -119,6 +119,27 @@ function t_prepare_cancel($a) {
     $fee = (int) cancelFee($j);
     return ["fee" => $fee, "_card" => ["type" => "cancel", "job_id" => (int) $j["id"], "title" => $j["title"], "fee" => $fee]];
 }
+function t_get_customer_summary($a) {
+    global $pdo, $u;
+    $bal = (float) col($u, ["wallet", "balance", "wallet_balance"]) ?: 0;
+    $ref = (string) (col($u, ["referral_code", "ref_code"]) ?? "—");
+    $tot = $done = $act = 0;
+    try {
+        $q = $pdo->prepare("SELECT status FROM jobs WHERE customer_id=?");
+        $q->execute([$u["id"]]);
+        foreach ($q->fetchAll() as $r) {
+            $tot++;
+            if ($r["status"] == "completed") $done++;
+            elseif (in_array($r["status"], ["open", "requested", "assigned", "in_progress"])) $act++;
+        }
+    } catch (Throwable $e) {}
+    return ["balance" => $bal, "_card" => ["type" => "stats", "title" => "Your Account & Wallet", "rows" => [
+        ["Wallet balance", "₹" . number_format($bal, 0)],
+        ["Referral code", $ref],
+        ["Active bookings", $act],
+        ["Completed jobs", $done . " / " . $tot]
+    ]]];
+}
 function t_get_worker_jobs($a) {
     global $pdo, $u;
     $q = $pdo->prepare("SELECT j.id,j.title,j.status,j.slot,j.price,c.name person FROM jobs j JOIN users c ON c.id=j.customer_id WHERE j.worker_id=? ORDER BY j.id DESC LIMIT 30");
@@ -128,16 +149,36 @@ function t_get_worker_jobs($a) {
     $rows = array_slice($rows, 0, 8);
     return ["n" => count($rows), "_card" => ["type" => "bookings", "title" => "Your jobs", "items" => $rows]];
 }
+function t_get_open_marketplace_jobs($a) {
+    global $pdo, $u;
+    $cat = (string) (col($u, ["category", "skill", "skills", "service", "services"]) ?? "");
+    $q = $pdo->prepare("SELECT j.id,j.title,j.status,j.slot,j.price,c.name person,j.category FROM jobs j JOIN users c ON c.id=j.customer_id WHERE j.status='open' AND (j.worker_id IS NULL OR j.worker_id=0) ORDER BY j.id DESC LIMIT 20");
+    $q->execute([]);
+    $rows = [];
+    foreach ($q->fetchAll() as $r) {
+        if ($cat !== "" && stripos((string) $r["category"], $cat) === false && stripos($cat, (string) ($r["category"] ?: "\0")) === false) continue;
+        $rows[] = jobcard($r);
+        if (count($rows) >= 6) break;
+    }
+    return ["n" => count($rows), "_card" => ["type" => "bookings", "title" => "Open jobs" . ($cat ? " · $cat" : ""), "items" => $rows]];
+}
 function t_get_worker_earnings($a) {
     global $pdo, $u;
     $m = preg_match('/^\d{4}-\d{2}$/', $a["month"] ?? "") ? $a["month"] : null;
     $q = $pdo->prepare("SELECT price,commission,tip,settled,done_at FROM jobs WHERE worker_id=? AND paid=1"); $q->execute([$u["id"]]);
-    $n = $net = $tips = $set = 0;
+    $n = $net = $tips = $set = $pend = 0;
     foreach ($q->fetchAll() as $r) {
         if ($m && substr((string) $r["done_at"], 0, 7) != $m) continue;
-        $n++; $v = (int) $r["price"] - (int) $r["commission"]; $net += $v; $tips += (int) $r["tip"]; if (!empty($r["settled"])) $set += $v;
+        $n++; $v = (int) $r["price"] - (int) $r["commission"]; $net += $v; $tips += (int) $r["tip"];
+        if (!empty($r["settled"])) $set += $v; else $pend += $v;
     }
-    return ["net" => $net, "_card" => ["type" => "stats", "title" => "Earnings" . ($m ? " · $m" : " · all time"), "rows" => [["Paid jobs", $n], ["Net earnings", "₹$net"], ["Tips", "₹$tips"], ["Already settled", "₹$set"]]]];
+    return ["net" => $net, "pending" => $pend, "_card" => ["type" => "stats", "title" => "Earnings" . ($m ? " · $m" : " · all time"), "rows" => [
+        ["Paid jobs", $n],
+        ["Net earnings", "₹$net"],
+        ["Tips earned", "₹$tips"],
+        ["Pending settlement", "₹$pend"],
+        ["Already settled", "₹$set"]
+    ]]];
 }
 function t_get_worker_performance($a) {
     global $pdo, $u;
@@ -163,7 +204,38 @@ function t_get_worker_profile_suggestions($a) {
     $r = getworker($u["id"]); if (!$r) return err("Profile not found.");
     $c = wcard($r, 1, wstats($r["id"]));
     $missing = []; foreach (["category", "location", "experience", "photo", "rate", "hours"] as $k) if (empty($c[$k])) $missing[] = $k; if (!$c["verified"]) $missing[] = "verification";
-    return ["missing" => $missing, "_card" => ["type" => "stats", "title" => "Profile strength", "rows" => [["Rating", $c["rating"] ?? "New"], ["Jobs done", $c["jobs_done"]], ["Verified", $c["verified"] ? "Yes" : "No"], ["Missing", $missing ? implode(", ", $missing) : "Nothing 🎉"]]]];
+    return ["missing" => $missing, "_card" => ["type" => "stats", "title" => "Profile strength", "rows" => [["Rating", $c["rating"] ?? "New"], ["Jobs done", $c["jobs_done"]], ["Verified", $c["verified"] ? "Yes" : "No"], ["Current hours", $c["hours"] ?? "Not set"], ["Missing", $missing ? implode(", ", $missing) : "Nothing 🎉"]]]];
+}
+function t_get_admin_overview($a) {
+    global $pdo;
+    $cust = $work = $ver = $jobs = $act = $done = $disp = 0; $rev = 0;
+    try {
+        foreach ($pdo->query("SELECT role,verified,is_verified,banned FROM users")->fetchAll() as $r) {
+            if (!empty($r["banned"])) continue;
+            if ($r["role"] == "customer") $cust++;
+            elseif ($r["role"] == "worker") { $work++; if (!empty(col($r, ["verified", "is_verified"]))) $ver++; }
+        }
+    } catch (Throwable $e) {}
+    try {
+        foreach ($pdo->query("SELECT status,paid,commission FROM jobs")->fetchAll() as $j) {
+            $jobs++;
+            if ($j["status"] == "completed") $done++;
+            elseif (in_array($j["status"], ["open", "requested", "assigned", "in_progress"])) $act++;
+            elseif ($j["status"] == "disputed") $disp++;
+            if (!empty($j["paid"])) $rev += (int) ($j["commission"] ?? 0);
+        }
+    } catch (Throwable $e) {}
+    try {
+        $q = $pdo->query("SELECT COUNT(*) FROM disputes WHERE status='open'");
+        if ($q) $disp = max($disp, (int) $q->fetchColumn());
+    } catch (Throwable $e) {}
+    return ["_card" => ["type" => "stats", "title" => "Platform Overview", "rows" => [
+        ["Customers", $cust],
+        ["Workers (Verified)", "$work ($ver)"],
+        ["Active / Completed jobs", "$act / $done"],
+        ["Open disputes", $disp],
+        ["Platform commission", "₹$rev"]
+    ]]];
 }
 function run($fn, $args = []) { try { $r = ("t_" . $fn)($args); } catch (Throwable $e) { error_log("tool $fn: " . $e->getMessage()); $r = err("That action failed."); } $c = $r["_card"] ?? null; unset($r["_card"]); return [$r, $c]; }
 
@@ -219,39 +291,61 @@ function aitx($k, $a = []) {
     global $L;
     static $S = null;
     if ($S === null) $S = [
-        "hello" => ["en" => "Hi %s! 👋 I can find trusted workers, estimate prices and manage your bookings. What do you need?",
-                    "kn" => "ನಮಸ್ಕಾರ %s! 👋 ನಾನು ವಿಶ್ವಾಸಾರ್ಹ ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಲು, ಬೆಲೆ ಅಂದಾಜಿಸಲು ಮತ್ತು ಬುಕಿಂಗ್ ನಿರ್ವಹಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನಿಮಗೇನು ಬೇಕು?",
-                    "hi" => "नमस्ते %s! 👋 मैं भरोसेमंद वर्कर ढूँढने, कीमत का अंदाज़ा लगाने और बुकिंग संभालने में मदद करता हूँ। आपको क्या चाहिए?"],
-        "ask_cat" => ["en" => "Which service do you need? Pick one or type it.", "kn" => "ಯಾವ ಸೇವೆ ಬೇಕು? ಒಂದನ್ನು ಆರಿಸಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ.", "hi" => "आपको कौन सी सेवा चाहिए? एक चुनें या लिखें।"],
-        "found" => ["en" => "Top **%d** %s options, ranked by rating and jobs done ⭐", "kn" => "ರೇಟಿಂಗ್ ಮತ್ತು ಪೂರ್ಣಗೊಂಡ ಕೆಲಸಗಳ ಆಧಾರದ ಮೇಲೆ ಅತ್ಯುತ್ತಮ **%d** %s ಆಯ್ಕೆಗಳು ⭐", "hi" => "रेटिंग और पूरे किए गए काम के आधार पर शीर्ष **%d** %s विकल्प ⭐"],
-        "none" => ["en" => "I couldn't find any %s workers right now. Try another area or service.", "kn" => "ಈಗ %s ಕೆಲಸಗಾರರು ಸಿಗಲಿಲ್ಲ. ಬೇರೆ ಪ್ರದೇಶ ಅಥವಾ ಸೇವೆ ಪ್ರಯತ್ನಿಸಿ.", "hi" => "अभी कोई %s वर्कर नहीं मिला। कोई दूसरा क्षेत्र या सेवा आज़माएँ।"],
-        "ask_slot" => ["en" => "Great choice! **When** should **%s** come? Pick a time or type a date and time (e.g. *tomorrow 5 pm*).", "kn" => "ಒಳ್ಳೆಯ ಆಯ್ಕೆ! **%s** ಯಾವಾಗ ಬರಬೇಕು? ಸಮಯ ಆರಿಸಿ ಅಥವಾ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ ಟೈಪ್ ಮಾಡಿ (ಉದಾ: *tomorrow 5 pm*).", "hi" => "बढ़िया चुनाव! **%s** कब आएँ? समय चुनें या तारीख और समय लिखें (जैसे *tomorrow 5 pm*)।"],
-        "bad_slot" => ["en" => "I couldn't read that time (or it is already past). Try *tomorrow 10 am* or *2026-11-25 16:00*.", "kn" => "ಆ ಸಮಯ ಅರ್ಥವಾಗಲಿಲ್ಲ. *tomorrow 10 am* ಅಥವಾ *2026-11-25 16:00* ಎಂದು ಪ್ರಯತ್ನಿಸಿ.", "hi" => "वह समय समझ नहीं आया। *tomorrow 10 am* या *2026-11-25 16:00* जैसा लिखें।"],
-        "ask_title" => ["en" => "Got it: **%s**. What work do you need done? (a few words, e.g. *fan not working*)", "kn" => "ಸರಿ: **%s**. ಯಾವ ಕೆಲಸ ಬೇಕು? (ಕೆಲವು ಪದಗಳಲ್ಲಿ, ಉದಾ: *fan not working*)", "hi" => "ठीक है: **%s**। कौन सा काम करवाना है? (कुछ शब्दों में, जैसे *fan not working*)"],
-        "review" => ["en" => "Almost done! Review the details and press **Confirm booking** 👇", "kn" => "ಬಹುತೇಕ ಮುಗಿಯಿತು! ವಿವರ ಪರಿಶೀಲಿಸಿ **Confirm booking** ಒತ್ತಿ 👇", "hi" => "लगभग हो गया! विवरण जाँचें और **Confirm booking** दबाएँ 👇"],
-        "cancelled" => ["en" => "No problem, I've stopped that. Anything else?", "kn" => "ಸರಿ, ನಿಲ್ಲಿಸಿದ್ದೇನೆ. ಇನ್ನೇನಾದರೂ?", "hi" => "कोई बात नहीं, रोक दिया। और कुछ?"],
-        "pick_first" => ["en" => "Let's find workers first — which service do you need?", "kn" => "ಮೊದಲು ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕೋಣ — ಯಾವ ಸೇವೆ ಬೇಕು?", "hi" => "पहले वर्कर ढूँढते हैं — कौन सी सेवा चाहिए?"],
-        "unknown" => ["en" => "I'm not sure I got that 🤔 Here's what I can do:", "kn" => "ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ 🤔 ನಾನು ಇವುಗಳಲ್ಲಿ ಸಹಾಯ ಮಾಡಬಲ್ಲೆ:", "hi" => "मुझे समझ नहीं आया 🤔 मैं इनमें मदद कर सकता हूँ:"],
-        "bye" => ["en" => "You're welcome! 😊 I'm here whenever you need me.", "kn" => "ಸ್ವಾಗತ! 😊 ಬೇಕಾದಾಗ ನಾನು ಇಲ್ಲಿದ್ದೇನೆ.", "hi" => "आपका स्वागत है! 😊 जब ज़रूरत हो, मैं यहाँ हूँ।"],
-        "how" => ["en" => "**WorkOnnect** connects you with verified local workers in 3 steps:\n1️⃣ Search a service\n2️⃣ Compare rating, price and availability\n3️⃣ Book, track and pay on the job page.",
+        "hello" => ["en" => "Hi %s! 👋 I'm your **WorkOnnect Assistant**.\n• Find & book verified workers\n• Check instant price estimates\n• Track jobs, earnings & wallet\n\nHow can I help you today?",
+                    "kn" => "ನಮಸ್ಕಾರ %s! 👋 ನಾನು ನಿಮ್ಮ **WorkOnnect ಸಹಾಯಕ**.\n• ಪರಿಶೀಲಿತ ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಿ ಮತ್ತು ಬುಕ್ ಮಾಡಿ\n• ತಕ್ಷಣದ ಬೆಲೆ ಅಂದಾಜು ಪಡೆಯಿರಿ\n• ಕೆಲಸಗಳು, ಗಳಿಕೆ ಮತ್ತು ವಾಲೆಟ್ ಪರಿಶೀಲಿಸಿ\n\nಇಂದು ನಾನು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?",
+                    "hi" => "नमस्ते %s! 👋 मैं आपका **WorkOnnect सहायक** हूँ।\n• सत्यापित वर्कर ढूँढें और बुक करें\n• तुरंत कीमत का अंदाज़ा पाएँ\n• जॉब, कमाई और वॉलेट ट्रैक करें\n\nआज मैं आपकी क्या मदद करूँ?"],
+        "ask_cat" => ["en" => "Which service do you need? Pick a category below or type it (e.g. *Electrician*, *Plumber*).",
+                      "kn" => "ಯಾವ ಸೇವೆ ಬೇಕು? ಕೆಳಗಿನ ಒಂದನ್ನು ಆರಿಸಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ (ಉದಾ: *Electrician*, *Plumber*).",
+                      "hi" => "आपको कौन सी सेवा चाहिए? नीचे से चुनें या लिखें (जैसे *Electrician*, *Plumber*)।"],
+        "found" => ["en" => "Top **%d** %s options, ranked by rating and jobs done ⭐",
+                    "kn" => "ರೇಟಿಂಗ್ ಮತ್ತು ಪೂರ್ಣಗೊಂಡ ಕೆಲಸಗಳ ಆಧಾರದ ಮೇಲೆ ಅತ್ಯುತ್ತಮ **%d** %s ಆಯ್ಕೆಗಳು ⭐",
+                    "hi" => "रेटिंग और पूरे किए गए काम के आधार पर शीर्ष **%d** %s विकल्प ⭐"],
+        "none" => ["en" => "I couldn't find any %s workers matching that filter right now. Try clearing the area/time filter or pick another service.",
+                   "kn" => "ಈಗ %s ಕೆಲಸಗಾರರು ಸಿಗಲಿಲ್ಲ. ಬೇರೆ ಪ್ರದೇಶ ಅಥವಾ ಸೇವೆ ಪ್ರಯತ್ನಿಸಿ.",
+                   "hi" => "अभी कोई %s वर्कर नहीं मिला। कोई दूसरा क्षेत्र या सेवा आज़माएँ।"],
+        "ask_slot" => ["en" => "Great choice! **When** should **%s** visit?\nPick a quick slot below or type a date and time (e.g. *tomorrow 5 pm*).",
+                       "kn" => "ಒಳ್ಳೆಯ ಆಯ್ಕೆ! **%s** ಯಾವಾಗ ಬರಬೇಕು?\nಕೆಳಗಿನ ಸಮಯ ಆರಿಸಿ ಅಥವಾ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ ಟೈಪ್ ಮಾಡಿ (ಉದಾ: *tomorrow 5 pm*).",
+                       "hi" => "बढ़िया चुनाव! **%s** कब आएँ?\nनीचे से समय चुनें या तारीख और समय लिखें (जैसे *tomorrow 5 pm*)।"],
+        "bad_slot" => ["en" => "I couldn't read that time (or it is already past). Try *tomorrow 10 am* or *2026-11-28 16:00*.",
+                       "kn" => "ಆ ಸಮಯ ಅರ್ಥವಾಗಲಿಲ್ಲ. *tomorrow 10 am* ಅಥವಾ *2026-11-28 16:00* ಎಂದು ಪ್ರಯತ್ನಿಸಿ.",
+                       "hi" => "वह समय समझ नहीं आया। *tomorrow 10 am* या *2026-11-28 16:00* जैसा लिखें।"],
+        "ask_title" => ["en" => "Got it: **%s**.\nWhat work do you need done? Describe it in a few words (e.g. *ceiling fan repair* or *kitchen tap leak*).",
+                        "kn" => "ಸರಿ: **%s**.\nಯಾವ ಕೆಲಸ ಬೇಕು? ಕೆಲವು ಪದಗಳಲ್ಲಿ ವಿವರಿಸಿ (ಉದಾ: *fan not working*).",
+                        "hi" => "ठीक है: **%s**।\nकौन सा काम करवाना है? कुछ शब्दों में लिखें (जैसे *fan not working*)।"],
+        "review" => ["en" => "Almost done! Review your booking details below and press **Confirm booking** 👇",
+                     "kn" => "ಬಹುತೇಕ ಮುಗಿಯಿತು! ವಿವರ ಪರಿಶೀಲಿಸಿ **Confirm booking** ಒತ್ತಿ 👇",
+                     "hi" => "लगभग हो गया! विवरण जाँचें और **Confirm booking** दबाएँ 👇"],
+        "cancelled" => ["en" => "No problem, I've stopped that. What would you like to do next?",
+                        "kn" => "ಸರಿ, ನಿಲ್ಲಿಸಿದ್ದೇನೆ. ಮುಂದೇನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+                        "hi" => "कोई बात नहीं, रोक दिया। आगे आप क्या करना चाहेंगे?"],
+        "pick_first" => ["en" => "Let's find workers first — which service do you need?",
+                         "kn" => "ಮೊದಲು ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕೋಣ — ಯಾವ ಸೇವೆ ಬೇಕು?",
+                         "hi" => "पहले वर्कर ढूँढते हैं — कौन सी सेवा चाहिए?"],
+        "unknown" => ["en" => "Here is what I can help you with right now 👇",
+                      "kn" => "ನಾನು ಇವುಗಳಲ್ಲಿ ಸಹಾಯ ಮಾಡಬಲ್ಲೆ 👇",
+                      "hi" => "मैं इनमें आपकी मदद कर सकता हूँ 👇"],
+        "bye" => ["en" => "You're welcome! 😊 I'm right here whenever you need help.",
+                  "kn" => "ಸ್ವಾಗತ! 😊 ಬೇಕಾದಾಗ ನಾನು ಇಲ್ಲಿದ್ದೇನೆ.",
+                  "hi" => "आपका स्वागत है! 😊 जब ज़रूरत हो, मैं यहाँ हूँ।"],
+        "how" => ["en" => "**How WorkOnnect Works (3 Easy Steps):**\n1️⃣ **Search:** Pick a service or compare verified workers by rating, price & availability.\n2️⃣ **Book:** Choose a time slot and describe your task.\n3️⃣ **Track & Pay:** Follow live job status and pay securely on the job page after completion.",
                   "kn" => "**WorkOnnect** ನಿಮ್ಮನ್ನು ಪರಿಶೀಲಿತ ಸ್ಥಳೀಯ ಕೆಲಸಗಾರರೊಂದಿಗೆ 3 ಹಂತಗಳಲ್ಲಿ ಸಂಪರ್ಕಿಸುತ್ತದೆ:\n1️⃣ ಸೇವೆಯನ್ನು ಹುಡುಕಿ\n2️⃣ ರೇಟಿಂಗ್, ಬೆಲೆ ಮತ್ತು ಲಭ್ಯತೆ ಹೋಲಿಸಿ\n3️⃣ ಬುಕ್ ಮಾಡಿ, ಟ್ರ್ಯಾಕ್ ಮಾಡಿ ಮತ್ತು ಜಾಬ್ ಪುಟದಲ್ಲಿ ಪಾವತಿಸಿ.",
                   "hi" => "**WorkOnnect** आपको सत्यापित स्थानीय वर्कर से 3 चरणों में जोड़ता है:\n1️⃣ सेवा खोजें\n2️⃣ रेटिंग, कीमत और उपलब्धता की तुलना करें\n3️⃣ बुक करें, ट्रैक करें और जॉब पेज पर भुगतान करें।"],
-        "pay" => ["en" => "💳 Payment happens on the job page after the work is done. The price is agreed with the worker. I never ask for OTPs or card details — please don't share them with anyone.",
+        "pay" => ["en" => "💳 **Payments & Security:**\n• Payment is made on the **Job Page** after the work is completed.\n• The final price is agreed transparently with your worker.\n• **Safety note:** WorkOnnect never asks for OTPs, UPI PINs, or card details in chat.",
                   "kn" => "💳 ಕೆಲಸ ಮುಗಿದ ನಂತರ ಜಾಬ್ ಪುಟದಲ್ಲಿ ಪಾವತಿ ಮಾಡಲಾಗುತ್ತದೆ. ಬೆಲೆಯನ್ನು ಕೆಲಸಗಾರರೊಂದಿಗೆ ಒಪ್ಪಿಕೊಳ್ಳಲಾಗುತ್ತದೆ. ನಾನು ಎಂದಿಗೂ OTP ಅಥವಾ ಕಾರ್ಡ್ ವಿವರ ಕೇಳುವುದಿಲ್ಲ — ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.",
                   "hi" => "💳 काम पूरा होने के बाद भुगतान जॉब पेज पर होता है। कीमत वर्कर के साथ तय होती है। मैं कभी OTP या कार्ड की जानकारी नहीं माँगता — इसे किसी के साथ साझा न करें।"],
-        "safe" => ["en" => "🛡️ Workers with the **verified** badge have passed our ID checks. Ratings and jobs done are shown on every profile before you book.",
+        "safe" => ["en" => "🛡️ **Trust & Verification:**\n• Workers with the **Verified ✔** badge have passed ID & background checks.\n• Every profile displays real customer ratings, completed job counts, and hourly/base rates before you book.",
                    "kn" => "🛡️ **ಪರಿಶೀಲಿತ** ಬ್ಯಾಡ್ಜ್ ಇರುವ ಕೆಲಸಗಾರರು ನಮ್ಮ ಗುರುತಿನ ಪರಿಶೀಲನೆ ಪಾಸಾಗಿದ್ದಾರೆ. ಬುಕ್ ಮಾಡುವ ಮೊದಲು ಪ್ರತಿ ಪ್ರೊಫೈಲ್‌ನಲ್ಲಿ ರೇಟಿಂಗ್ ಮತ್ತು ಪೂರ್ಣಗೊಂಡ ಕೆಲಸಗಳನ್ನು ನೋಡಬಹುದು.",
                    "hi" => "🛡️ **वेरिफाइड** बैज वाले वर्कर हमारी ID जाँच पास कर चुके हैं। बुक करने से पहले हर प्रोफ़ाइल पर रेटिंग और पूरे किए गए काम देखें।"],
-        "policy" => ["en" => "↩️ Cancelling is free until a worker accepts. After that a small fee applies: 5% (min ₹20), or 20% (min ₹50) if the visit is within 24 hours or the worker is on the way. Say *cancel booking #12* to see the exact fee.",
+        "policy" => ["en" => "↩️ **Cancellation Policy:**\n• **Free:** Until a worker accepts your request.\n• **5% fee (min ₹20):** After acceptance, if cancelled more than 24 hours before the visit.\n• **20% fee (min ₹50):** Within 24 hours of the visit or once the worker is on the way.\n\n💡 Type *cancel booking #12* to check the exact fee for a job.",
                      "kn" => "↩️ ಕೆಲಸಗಾರರು ಒಪ್ಪುವವರೆಗೆ ರದ್ದು ಮಾಡುವುದು ಉಚಿತ. ನಂತರ ಸಣ್ಣ ಶುಲ್ಕ: 5% (ಕನಿಷ್ಠ ₹20), ಭೇಟಿ 24 ಗಂಟೆಯೊಳಗಿದ್ದರೆ ಅಥವಾ ಕೆಲಸಗಾರರು ದಾರಿಯಲ್ಲಿದ್ದರೆ 20% (ಕನಿಷ್ಠ ₹50). ನಿಖರ ಶುಲ್ಕಕ್ಕೆ *cancel booking #12* ಎಂದು ಬರೆಯಿರಿ.",
                      "hi" => "↩️ वर्कर के स्वीकार करने तक रद्द करना मुफ़्त है। उसके बाद 5% (न्यूनतम ₹20) शुल्क लगता है, या 24 घंटे के भीतर / वर्कर के रास्ते में होने पर 20% (न्यूनतम ₹50)। सटीक शुल्क के लिए *cancel booking #12* लिखें।"],
-        "wallet" => ["en" => "👛 Your wallet is on the **Wallet** page. Referral bonus: when a friend you referred pays for their first job, you both get ₹50.",
+        "wallet" => ["en" => "👛 **Wallet & Referrals:**\n• View your balance and transactions on the **Wallet** page.\n• **Refer & Earn ₹50:** Share your referral code—when your friend pays for their first completed job, **both of you get ₹50**.",
                      "kn" => "👛 ನಿಮ್ಮ ವಾಲೆಟ್ **Wallet** ಪುಟದಲ್ಲಿದೆ. ರೆಫರಲ್ ಬೋನಸ್: ನೀವು ಆಹ್ವಾನಿಸಿದ ಸ್ನೇಹಿತ ಮೊದಲ ಕೆಲಸಕ್ಕೆ ಪಾವತಿಸಿದಾಗ ನೀವಿಬ್ಬರೂ ₹50 ಪಡೆಯುತ್ತೀರಿ.",
                      "hi" => "👛 आपका वॉलेट **Wallet** पेज पर है। रेफ़रल बोनस: जब आपका बुलाया दोस्त अपने पहले जॉब का भुगतान करता है, तो आप दोनों को ₹50 मिलते हैं।"],
-        "dev" => ["en" => "👨‍💻 WorkOnnect was built with care by our team of four. Thank you for asking! Please meet the developers:",
+        "dev" => ["en" => "👨‍💻 WorkOnnect was built with care by our team of four. Thank you for asking! Meet the developers:",
                   "kn" => "👨‍💻 WorkOnnect ಅನ್ನು ನಮ್ಮ ನಾಲ್ವರ ತಂಡ ಪ್ರೀತಿಯಿಂದ ಅಭಿವೃದ್ಧಿಪಡಿಸಿದೆ. ಕೇಳಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು! ದಯವಿಟ್ಟು ನಮ್ಮ ಡೆವಲಪರ್‌ಗಳನ್ನು ಭೇಟಿಯಾಗಿ:",
                   "hi" => "👨‍💻 WorkOnnect को हमारी चार सदस्यों की टीम ने लगन से बनाया है। पूछने के लिए धन्यवाद! कृपया हमारे डेवलपर्स से मिलिए:"],
-        "clock" => ["en" => "🕒 Here's the current time and date for you:", "kn" => "🕒 ಪ್ರಸ್ತುತ ಸಮಯ ಮತ್ತು ದಿನಾಂಕ ಇಲ್ಲಿದೆ:", "hi" => "🕒 यह रहा वर्तमान समय और तारीख:"],
+        "clock" => ["en" => "🕒 Here is the current date and time:", "kn" => "🕒 ಪ್ರಸ್ತುತ ಸಮಯ ಮತ್ತು ದಿನಾಂಕ ಇಲ್ಲಿದೆ:", "hi" => "🕒 यह रहा वर्तमान समय और तारीख:"],
     ];
     $s = $S[$k][$L] ?? $S[$k]["en"] ?? $k;
     return $a ? vsprintf($s, $a) : $s;
@@ -307,8 +401,9 @@ function parse_slot($m) {
 function cat_chips() { return ["Electrician", "Plumber", "Painter", "Carpenter", "Cleaner", "AC Technician"]; }
 function slot_chips() { return ["Today 6 PM", "Tomorrow 10 AM", "Tomorrow 5 PM", "Not now"]; }
 function menu_chips($role) {
-    return $role == "worker" ? ["Show my new job requests", "How much did I earn this month?", "How am I performing?", "Improve my profile", "Set availability Mon-Sat 9am to 6pm"]
-        : ($role == "customer" ? ["Find an electrician near me", "Estimate a plumbing job", "Show my bookings", "Find a verified painter"] : ["How does WorkOnnect work?", "How do payments work?", "Is it safe?"]);
+    if ($role == "worker") return ["Show my new job requests", "Open jobs near me", "How much did I earn this month?", "How am I performing?", "Improve my profile", "Set availability Mon-Sat 9am to 6pm"];
+    if ($role == "customer") return ["Find an electrician near me", "Estimate a plumbing job", "Show my bookings", "My wallet & referrals", "Find a verified painter"];
+    return ["Platform overview", "How does WorkOnnect work?", "How do payments work?", "Is it safe?"];
 }
 function reply($text, $cards = [], $chips = []) { out(["reply" => $text, "cards" => array_values(array_filter((array) $cards)), "chips" => $chips]); }
 
@@ -321,7 +416,7 @@ $cancelWords = ["not now", "cancel this", "never mind", "start over", "ಬೇಡ
 if ($flow && $role == "customer") {
     if (has($m, $cancelWords)) { unset($_SESSION["ai_flow"]); reply(aitx("cancelled"), [], menu_chips("customer")); }
     // a clear new command leaves the flow
-    if (preg_match('/^(show (my|profile)|cancel booking|track booking|book worker|i want to book|find )/i', $msg)) { unset($_SESSION["ai_flow"]); $flow = null; }
+    if (preg_match('/^(show (my|profile)|cancel booking|track booking|book worker|i want to book|find |my wallet)/i', $msg)) { unset($_SESSION["ai_flow"]); $flow = null; }
 }
 if ($flow && $role == "customer") {
     $step = $flow["step"] ?? "";
@@ -387,23 +482,39 @@ if ($role == "customer") {
     }
 }
 
-/* 4. extra FAQ, calculator, jokes (all roles) */
+/* 4. extra FAQ, calculator, jokes, general knowledge (all roles) */
 x_faq();
 
 /* 5. core FAQ */
 if (has($m, ["how does", "how it works", "what is workonnect", "how do i use", "ಹೇಗೆ ಕೆಲಸ", "कैसे काम"])) reply(aitx("how"), [], menu_chips($role));
 if (has($m, ["cancellation", "cancel policy", "cancel fee", "ರದ್ದು ಶುಲ್ಕ", "रद्द शुल्क"]) || ($role == "customer" && has($m, ["cancel"]) && !preg_match('/\d/', $m))) reply(aitx("policy"), [], ["Show my bookings"]);
-if (has($m, ["wallet", "referral", "refer ", "ವಾಲೆಟ್", "वॉलेट", "रेफ़रल"])) reply(aitx("wallet"), [], menu_chips($role));
+if (has($m, ["wallet", "referral", "refer ", "ವಾಲೆಟ್", "वॉलेट", "रेफ़रल"])) {
+    if ($role == "customer") {
+        [$r, $c] = run("get_customer_summary");
+        reply(aitx("wallet"), [$c], ["Show my bookings", "Find an electrician near me"]);
+    }
+    reply(aitx("wallet"), [], menu_chips($role));
+}
 if (has($m, ["payment", "refund", "commission", "upi", "how to pay", "how do i pay", "ಪಾವತಿ", "भुगतान", "पेमेंट"])) reply(aitx("pay"), [], menu_chips($role));
 if (has($m, ["safe", "trust", "verified mean", "secure", "ಸುರಕ್ಷ", "सुरक्षित"])) reply(aitx("safe"), [], menu_chips($role));
 if (has($m, ["help", "what can you do", "menu", "ಸಹಾಯ", "मदद"])) reply(aitx("unknown"), [], menu_chips($role));
 
 /* ================= ADMIN ================= */
-if ($role == "admin") x_fallback();
+if ($role == "admin") {
+    if (has($m, ["overview", "stats", "dashboard", "summary", "report", "analytics", "platform", "users", "revenue", "dispute", "count"])) {
+        [$r, $c] = run("get_admin_overview");
+        reply("📊 Live **WorkOnnect** platform snapshot:", [$c], ["How does WorkOnnect work?", "How do payments work?", "Is it safe?"]);
+    }
+    x_fallback();
+}
 
 /* ================= WORKER ================= */
 if ($role == "worker") {
     if (has($m, ["availab", "working hours", "work days", "working days", "schedule", "ಲಭ್ಯ", "उपलब्ध"])) {
+        if (has($m, ["my availab", "current availab", "show availab", "what are my hours", "check availab"])) {
+            [$r, $c] = run("get_worker_profile_suggestions");
+            reply("⏰ Your current availability and profile summary:", [$c], ["Set availability Mon-Sat 9am to 6pm", "Weekdays 10am to 7pm"]);
+        }
         $days = [];
         $map = ["mon" => "Mon", "tue" => "Tue", "wed" => "Wed", "thu" => "Thu", "fri" => "Fri", "sat" => "Sat", "sun" => "Sun"];
         $all = array_values($map);
@@ -424,10 +535,11 @@ if ($role == "worker") {
         if (isset($r["error"])) reply("The end time must be later than the start time. Try again, e.g. *Mon-Sat 9am to 6pm*.", [], ["Mon-Sat 9am to 6pm"]);
         reply("✅ Availability updated: **" . $r["days"] . "**, " . $r["from"] . " – " . $r["to"] . ". Customers can only book you in these hours.", [], menu_chips("worker"));
     }
-    if (has($m, ["earn", "income", "money", "salary", "paid", "payout", "ಗಳಿಕೆ", "ಆದಾಯ", "कमाई", "आमदनी"])) {
+    if (has($m, ["earn", "income", "money", "salary", "paid", "payout", "settlement", "settled", "ಗಳಿಕೆ", "ಆದಾಯ", "कमाई", "आमदनी"])) {
         $mo = has($m, ["this month", "month", "ಈ ತಿಂಗಳು", "इस महीने"]) ? date("Y-m") : null;
         [$r, $c] = run("get_worker_earnings", ["month" => $mo]);
-        reply($mo ? "💰 Your income for **this month**:" : "💰 Your all-time income:", [$c], ["Earnings all time", "How am I performing?", "Show my new job requests"]);
+        $note = ($r["pending"] ?? 0) > 0 ? "\n💡 You have **₹{$r["pending"]}** awaiting payout settlement." : "";
+        reply(($mo ? "💰 Your income for **this month**:" : "💰 Your all-time income:") . $note, [$c], ["Earnings all time", "How am I performing?", "Show my new job requests"]);
     }
     if (has($m, ["perform", "rating", "review", "how am i doing", "ರೇಟಿಂಗ್", "रेटिंग", "प्रदर्शन"])) {
         [$r, $c] = run("get_worker_performance");
@@ -440,15 +552,25 @@ if ($role == "worker") {
         $lines = []; foreach ($r["missing"] as $k) $lines[] = "• " . ucfirst($tips[$k] ?? $k);
         reply($lines ? "Complete these to get more bookings:\n" . implode("\n", $lines) : "Your profile looks complete 🎉 Keep your availability up to date and reply quickly to requests.", [$c], ["Set availability Mon-Sat 9am to 6pm", "Show my new job requests"]);
     }
+    if (has($m, ["open job", "open jobs", "available job", "find job", "more job", "marketplace"])) {
+        [$r, $c] = run("get_open_marketplace_jobs");
+        reply($r["n"] ? "📢 Open customer jobs matching your skill. Open the **Open Jobs** page to send an offer:" : "No open unassigned jobs in your category right now. Keep your availability active so customers can book you directly ✨", [$c], ["Show my new job requests", "Improve my profile"]);
+    }
     if (has($m, ["job", "request", "booking", "order", "ಕೆಲಸ", "काम", "बुकिंग"])) {
         $st = has($m, ["new", "pending", "request"]) ? "requested" : (has($m, ["complete", "done", "finished"]) ? "completed" : (has($m, ["progress", "ongoing", "upcoming"]) ? "in_progress" : null));
         [$r, $c] = run("get_worker_jobs", ["status" => $st]);
-        reply($r["n"] ? "📋 Your " . ($st ? str_replace("_", " ", $st) . " " : "") . "jobs. Tap a status to open the job:" : "No jobs here yet. Keep your availability on and profile complete to receive requests ✨", [$c], ["Show my new job requests", "Completed jobs", "How much did I earn this month?"]);
+        reply($r["n"] ? "📋 Your " . ($st ? str_replace("_", " ", $st) . " " : "") . "jobs. Tap a status to open the job:" : "No jobs here yet. Keep your availability on and profile complete to receive requests ✨", [$c], ["Show my new job requests", "Open jobs near me", "Completed jobs", "How much did I earn this month?"]);
     }
     x_fallback();
 }
 
 /* ================= CUSTOMER ================= */
+/* account & wallet summary */
+if (has($m, ["my account", "my profile", "my balance", "wallet balance", "referral code", "my stats"])) {
+    [$r, $c] = run("get_customer_summary");
+    reply("👤 Here is your **WorkOnnect** account & wallet summary:", [$c], ["Show my bookings", "Find an electrician near me", "Wallet and referral"]);
+}
+
 /* my bookings */
 if (has($m, ["my booking", "bookings", "my order", "my job", "my request", "ಬುಕಿಂಗ್", "बुकिंग", "मेरी बुक"])) {
     [$r, $c] = run("get_my_bookings");
@@ -473,6 +595,15 @@ if ($cat || ($wantsFind && !has($m, ["booking"]))) {
     if (!$cat && $role == "customer") x_name_search();
     if (!$cat && ($s = x_typo($m))) reply(xt("typo", [$s]), [], ["Find " . $s, "Estimate price for " . $s]);
     $cat = $cat ?: ($ctx["category"] ?? null);
+    if (!$cat && has($m, ["best", "top", "verified", "worker", "workers"])) {
+        // allow browsing top-rated workers across all categories when user asks "top rated workers"
+        [$r, $c] = run("search_workers", ["verified_only" => $verified]);
+        if ($r["count"]) {
+            $chips = []; foreach ($r["workers"] as $w) { if (count($chips) < 3) $chips[] = "Book worker #" . $w["index"] . " (" . explode(" ", $w["name"])[0] . ")"; }
+            $chips[] = "Show profile #1";
+            reply("⭐ Top-rated workers across WorkOnnect:\n\n" . x_top_lines($r["workers"]) . "\n\n" . xt("found_tip"), [$c], $chips);
+        }
+    }
     if (!$cat) reply(aitx("ask_cat"), [], cat_chips());
     $loc = null;
     if (preg_match('/\b(?:in|near|around)\s+([a-z][a-z .]{2,24}?)(?:\s+(?:for|with|today|tomorrow|please|who|that|at|on|after|before|by)\b|[?.!,\d]|$)/i', $msg, $x) && !preg_match('/^(me|my|here|the|a)\b/i', trim($x[1]))) $loc = trim($x[1]);
